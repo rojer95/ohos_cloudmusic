@@ -1,4 +1,5 @@
 import { ImageKnifeComponent } from '@ohos/imageknife'
+import { Utils } from '../../../../../common/utils'
 import { PageSpace } from '../../../../../common/vars'
 
 @ComponentV2
@@ -12,7 +13,7 @@ export struct CommonTitle {
       if (this.iconUrl) {
         ImageKnifeComponent({
           imageKnifeOption: {
-            loadSrc: this.iconUrl,
+            loadSrc: Utils.getCoverUrl(this.iconUrl),
             objectFit: ImageFit.Cover
           }
         })

@@ -5,6 +5,7 @@ import { CommonPlaylistItemPlayBtn } from '../../../../../model/home_block';
 import { Playlist, TrackId } from '../../../../../model/playlist_detail';
 import { getPlayer } from '../../../../../viewmodel/global';
 import { CommonTitle } from './common_title'
+import { Utils } from '../../../../../common/utils'
 
 const ListSpace = 8;
 
@@ -50,7 +51,7 @@ export struct CommonPlaylist {
                 // 背景图
                 ImageKnifeComponent({
                   imageKnifeOption: {
-                    loadSrc: item.coverImg,
+                    loadSrc: Utils.getCoverUrl(item.coverImg),
                     objectFit: ImageFit.Cover
                   }
                 })

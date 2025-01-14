@@ -5,7 +5,9 @@ import { getPlayer, getGlobal, GlobalContent } from '../viewmodel/global';
 import { LyricBox } from './lyric';
 import { emitter } from '@kit.BasicServicesKit';
 import { ImageKnifeComponent } from '@ohos/imageknife';
-
+import { SongLevel } from '../common/songLevel';
+import { debuglog } from '../utils/log';
+import { SwipeRefresher } from '@kit.ArkUI';
 
 enum DisplayMode {
   Cover = 0,
@@ -36,27 +38,20 @@ const barAniStopOption: AnimatorOptions = {
 
 @ComponentV2
 export struct MusicPage {
-  // @StorageProp('playingInfo') playingInfo?: avSession.AVMetadata = undefined;
-  // @StorageProp('playingState') @Watch('onPlayChange') playingState: media.AVPlayerState = 'idle'
-  // @StorageProp('playingTime') time: number = 0;
-  // @StorageProp('playingDuration') duration: number = 0;
-  // @StorageProp('playingLoopMode') playingLoopMode: number = 0;
-  // @StorageProp('playingRealDuration') realDuration: number = 0;
-  // @StorageProp('playingIsFavorite') isFavorite: boolean = false;
-  // @StorageLink('isShowMusicPage') isShowMusicPage: boolean = false;
-  // @StorageProp('topRectHeight') topRectHeight: number = 0;
-
   @Local global: GlobalContent | undefined = getGlobal()
   @Local player: Player | undefined = getPlayer()
   @Local angle: number = 0
   @Local barAngle: number = -45
   @Local mode: DisplayMode = DisplayMode.Cover;
+  @Local isShowLevelToggle: boolean = false
+  /** 旋转动画 **/
   private ani?: AnimatorResult
+  /** 拨杆动画 **/
   private barAni?: AnimatorResult
   private aniIng: boolean = false;
 
   aboutToAppear(): void {
-    console.log('MusicPage aboutToAppear...')
+    // console.log('MusicPage aboutToAppear...')
     this.ani = this.getUIContext().createAnimator({
       duration: 30000,
       easing: 'linear',
@@ -90,10 +85,13 @@ export struct MusicPage {
     this.barAni = undefined
   }
 
-  @Monitor('player.playingState')
+  @Monitor('player.playingState','player.isToggleLeveling')
   onPlayChange() {
-    // console.log('this.playingState ---> ', this.playingState)
-    // console.log('this.aniIng ---> ', this.aniIng)
+    // 拖动音质情况下，不切换动画
+    if (this.player?.isToggleLeveling) {
+      return
+    }
+
     if (this.player?.playingState === 'playing') {
       if (!this.aniIng) {
         this.startAni()
@@ -154,13 +152,54 @@ export struct MusicPage {
     emitter.emit('globalModal', eventData)
   }
 
+  /**
+   * 音质选择器
+   */
+  @Builder
+  levelToggleBuilder() {
+
+    Column() {
+      // 第一步：自定义滚动容器
+      List({ space: '10vp' }) {
+        ForEach(this.player?.activeLevels || [], (item: SongLevel) => {
+          ListItem() {
+            Text(String(item.label)).fontSize(14).fontWeight(
+              this.player?.level === item.value ?
+              FontWeight.Bold : FontWeight.Normal)
+          }
+          .width('90%')
+          .height('40vp')
+          .border({
+            width: 1, color:
+            this.player?.level === item.value ?
+              '#a3000000' : '#12000000'
+          })
+          .borderRadius(10)
+          .onClick(() => {
+
+            if (this.player?.level === item.value) {
+              return;
+            }
+            this.player?.toggleMusicLevel(item.value)
+            this.isShowLevelToggle = false
+          })
+        })
+      }
+      .alignListItem(ListItemAlign.Center)
+      .margin({ top: '10vp' })
+      .width('100%')
+      .height('300vp')
+    }.width('100%')
+  }
+
   build() {
     Stack() {
       // 背景
       Column() {
         ImageKnifeComponent({
           imageKnifeOption: {
-            loadSrc: this.player?.playingMediaImage ? `${this.player?.playingMediaImage}?param=300y300` : undefined
+            loadSrc: this.player?.playingMediaImage ? Utils.getCoverUrl(this.player?.playingMediaImage, 400, 400) :
+              undefined
           }
         })
           .height('100%')
@@ -231,8 +270,8 @@ export struct MusicPage {
 
                   if (this.player?.playingMediaImage) {
                     ImageKnifeComponent({
-                      imageKnifeOption:{
-                        loadSrc: `${this.player?.playingMediaImage}?param=500y500`
+                      imageKnifeOption: {
+                        loadSrc: Utils.getCoverUrl(this.player?.playingMediaImage, 400, 400)
                       }
                     })
                       .height(280 * 0.6)
@@ -345,11 +384,30 @@ export struct MusicPage {
 
 
         // 时间
+
         Row() {
           Text(Utils.duration2timeString(this.player?.time || 0)).fontColor('#99ffffff').fontSize(10)
+          Row() {
+            if (this.player?.isToggleLeveling) {
+              SwipeRefresher({
+                isLoading: true,
+              }).height(16).width(16)
+            }
+            Text(this.player?.isToggleLeveling ? '切换中...' : this.player?.levelName)
+              .fontColor('#99ffffff')
+              .fontSize(10)
+              .onClick(() => {
+                if (this.player?.isToggleLeveling) {
+                  return
+                }
+                this.isShowLevelToggle = !this.isShowLevelToggle
+              })
+          }.justifyContent(FlexAlign.Center)
+
           Text(Utils.duration2timeString(this.player?.duration || 0)).fontColor('#99ffffff').fontSize(10)
         }
         .width('100%')
+        .height(16)
         .padding({ left: 22, right: 22 })
         .justifyContent(FlexAlign.SpaceBetween)
         .flexShrink(0)
@@ -357,9 +415,7 @@ export struct MusicPage {
 
 
         // 播放控制器
-
         Row() {
-
           // 循环模式
           Button() {
             Image(this.getLoopIcon(this.player?.loopMode || 0))
@@ -395,7 +451,8 @@ export struct MusicPage {
           // 播放暂停
 
           Button() {
-            Image(this.player?.playingState === 'playing' ? $r('app.media.icon_pause') : $r('app.media.icon_play'))
+            Image(this.player?.playingState === 'playing' || this.player?.isToggleLeveling ?
+            $r('app.media.icon_pause') : $r('app.media.icon_play'))
               .width(60)
               .height(60)
               .draggable(false)
@@ -408,6 +465,7 @@ export struct MusicPage {
           .onClick(() => {
             this.toggle()
           })
+
 
           // 下首
           Button() {
@@ -458,11 +516,17 @@ export struct MusicPage {
         .justifyContent(FlexAlign.SpaceAround)
         .flexShrink(0)
         .transition(TransitionEffect.move(TransitionEdge.BOTTOM))
-
       }
       .height('100%')
       .justifyContent(FlexAlign.SpaceBetween)
+
     }
+    .bindSheet($$this.isShowLevelToggle, this.levelToggleBuilder(), {
+      preferType: SheetType.BOTTOM,
+      height: '400vp',
+      blurStyle: BlurStyle.COMPONENT_REGULAR,
+      title: { title: '选择音质' },
+    })
     .alignContent(Alignment.Top)
   }
 }

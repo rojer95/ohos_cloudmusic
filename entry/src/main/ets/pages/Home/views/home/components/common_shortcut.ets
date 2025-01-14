@@ -4,6 +4,7 @@ import { PlayOptions } from '../../../../../viewmodel/player';
 import { getPlayer } from '../../../../../viewmodel/global';
 import { CommonTitle } from './common_title'
 import { ImageKnifeComponent } from '@ohos/imageknife'
+import { Utils } from '../../../../../common/utils';
 
 const ListSpace = 8;
 
@@ -44,7 +45,7 @@ export struct CommonShortcut {
                 // 背景图
                 ImageKnifeComponent({
                   imageKnifeOption: {
-                    loadSrc: item.coverImg
+                    loadSrc: Utils.getCoverUrl(item.coverImg)
                   }
                 }).width(80).height(80)
 
@@ -66,7 +67,7 @@ export struct CommonShortcut {
                   // icon
                   ImageKnifeComponent({
                     imageKnifeOption: {
-                      loadSrc: item.iconImg,
+                      loadSrc: Utils.getCoverUrl(item.iconImg),
                       objectFit: ImageFit.Contain
                     }
                   })

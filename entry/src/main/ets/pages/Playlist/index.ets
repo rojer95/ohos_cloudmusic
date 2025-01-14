@@ -2,7 +2,7 @@ import { apiPlaylistDetails } from "../../api/playlist_detail";
 import { Playlist } from "../../model/playlist_detail";
 import { debuglog } from "../../utils/log";
 import { ImageKnifeComponent } from '@ohos/imageknife'
-import { SongDetail } from "../../model/song_detail";
+import { SongDetailWithPrivilege } from "../../model/song_detail";
 import tinycolor from "ohos_tinycolor2";
 import { ImageMainColorResult, Utils } from "../../common/utils";
 import { getGlobal, getPlayer, GlobalContent } from "../../viewmodel/global";
@@ -83,23 +83,23 @@ class BasicDataSource<T> implements IDataSource {
   }
 }
 
-class TrackDataSource extends BasicDataSource<SongDetail> {
-  private dataArray: SongDetail[] = [];
+class TrackDataSource extends BasicDataSource<SongDetailWithPrivilege> {
+  private dataArray: SongDetailWithPrivilege[] = [];
 
   public totalCount(): number {
     return this.dataArray.length;
   }
 
-  public getData(index: number): SongDetail {
+  public getData(index: number): SongDetailWithPrivilege {
     return this.dataArray[index];
   }
 
-  public addData(index: number, data: SongDetail): void {
+  public addData(index: number, data: SongDetailWithPrivilege): void {
     this.dataArray.splice(index, 0, data);
     this.notifyDataAdd(index);
   }
 
-  public pushData(data: SongDetail): void {
+  public pushData(data: SongDetailWithPrivilege): void {
     this.dataArray.push(data);
     this.notifyDataAdd(this.dataArray.length - 1);
   }
@@ -119,7 +119,7 @@ export struct PlaylistPage {
   @Local titleBgColor: string = '#00ffffff'
   @Local titleTextColor: string = '#00ffffff'
   @Local global: GlobalContent | undefined = getGlobal()
-  @Local tracks: SongDetail[] = []
+  @Local tracks: SongDetailWithPrivilege[] = []
   private data: TrackDataSource = new TrackDataSource();
   private loading = false
   private pageSize = 20
@@ -153,12 +153,8 @@ export struct PlaylistPage {
 
     const url = this.detail?.backgroundCoverUrl ? Utils.getCoverUrl(this.detail?.backgroundCoverUrl) :
     Utils.getCoverUrl(this.detail?.coverImgUrl)
-
-    for (const song of (this.detail?.tracks || [])) {
-      this.data.pushData(song)
-    }
-
     this.isNotMore = this.data.totalCount() >= (this.detail?.trackIds?.length || 0)
+    this.loadMore();
 
     if (url) {
       colors = await Utils.getImageMainColor(url);
@@ -172,11 +168,9 @@ export struct PlaylistPage {
         this.mainColor = color.toHexString()
         this.mainSecondColor = color.darken(20).toHexString()
       }
-
     }
-
-    this.loadMore();
   }
+
   loadMore = async () => {
     const loadedCount = this.data.totalCount();
     if (this.isNotMore) {
@@ -273,7 +267,7 @@ export struct PlaylistPage {
             Flex({ alignItems: ItemAlign.Center }) {
               ImageKnifeComponent({
                 imageKnifeOption: {
-                  loadSrc: Utils.getCoverUrl(this.detail?.creator?.avatarUrl, 100, 100),
+                  loadSrc: Utils.getCoverUrl(this.detail?.creator?.avatarUrl),
                   objectFit: ImageFit.Cover
                 }
               })
@@ -363,7 +357,7 @@ export struct PlaylistPage {
 
               List({ space: 6 }) {
 
-                LazyForEach(this.data, (item: SongDetail, index: number) => {
+                LazyForEach(this.data, (item: SongDetailWithPrivilege, index: number) => {
                   ListItem() {
                     Flex({ alignItems: ItemAlign.Center }) {
                       Column() {
@@ -372,12 +366,12 @@ export struct PlaylistPage {
                       .flexShrink(0)
 
                       Column() {
-                        Text(item.name).fontSize(14).fontColor('#FFFFFF')
+                        Text(item.detail.name).fontSize(14).fontColor('#FFFFFF')
                           .margin({ bottom: 8 })
                         Row() {
                           Text([
-                            item.ar?.map(ar => ar.name).join('/'),
-                            item.al?.name
+                            item.detail.ar?.map(ar => ar.name).join('/'),
+                            item.detail.al?.name
                           ].filter(i =>!!i).join(' - '))
                             .maxLines(1)
                             .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -391,10 +385,11 @@ export struct PlaylistPage {
                       Column() {
                         MusicPlayBtn({
                           color: '#FFFFFF',
-                          songId: `${item.id}`,
+                          songId: `${item.detail.id}`,
                         }).width(14).height(14).opacity(0.7)
                       }
                     }
+                    .opacity(item.privilege.st < 0 ? 0.7 : 1)
                     .padding({
                       top: 10,
                       bottom: 10,
@@ -403,20 +398,24 @@ export struct PlaylistPage {
                     })
                     .width('100%')
                     .onClick(() => {
+                      // st < 0 没有版权，设置灰色
+                      if (item.privilege.st < 0) {
+                        return;
+                      }
                       if (this.playlistType === 'detail') {
                         getPlayer()?.start(this.detail?.trackIds?.map(i => i.id)?.join(',') || '', 'ids', {
                           avQueueName: this.detail?.name?.replace(/\s/ig, ''),
-                          songId: String(item.id)
+                          songId: String(item.detail.id)
                         })
                       } else {
                         getPlayer()?.start(this.playlistId, 'playList', {
-                          songId: String(item.id)
+                          songId: String(item.detail.id)
                         })
                       }
                     })
                   }
 
-                }, (item: SongDetail) => `${item.id}`)
+                }, (item: SongDetailWithPrivilege) => `${item.detail.id}`)
 
                 if (this.isNotMore) {
                   ListItem() {
@@ -434,6 +433,8 @@ export struct PlaylistPage {
             }.padding({ top: 20, bottom: 20 })
           }
         }
+
+        .align(Alignment.Top)
         .scrollBar(BarState.Off)
         .onScrollEdge((side) => {
           if (side === Edge.Bottom) {

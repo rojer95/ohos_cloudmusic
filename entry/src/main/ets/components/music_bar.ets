@@ -6,6 +6,7 @@ import { emitter } from '@kit.BasicServicesKit';
 import { Player } from '../viewmodel/player';
 import { ImageKnifeComponent } from '@ohos/imageknife';
 import tinycolor from 'ohos_tinycolor2';
+import { Utils } from '../common/utils';
 
 @ComponentV2
 export struct MusicBar {
@@ -89,7 +90,7 @@ export struct MusicBar {
 
             ImageKnifeComponent({
               imageKnifeOption: {
-                loadSrc: `${this.player?.playingMediaImage}?param=100y100`
+                loadSrc: Utils.getCoverUrl(this.player?.playingMediaImage)
               }
             })
               .height(16)

@@ -18,7 +18,7 @@ export interface ImageMainColorRegion {
  */
 export class Utils {
   public static async downloadImage(url: string, options?: image.DecodingOptions): Promise<PixelMap> {
-    const response: AxiosResponse<ArrayBuffer> = await axios.get<ArrayBuffer>(Utils.getCoverUrl(url, 50, 50) as string, {
+    const response: AxiosResponse<ArrayBuffer> = await axios.get<ArrayBuffer>(Utils.getCoverUrl(url) as string, {
       responseType: 'array_buffer',
     })
     const imageSource: image.ImageSource = image.createImageSource(response.data);
@@ -60,7 +60,7 @@ export class Utils {
     }
   }
 
-  public static getCoverUrl(url?: string, width = 114, height = 114) {
+  public static getCoverUrl(url?: string, width = 200, height = 200) {
     if (!url || url.indexOf('?') > 0) {
       return url
     }

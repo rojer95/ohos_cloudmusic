@@ -86,7 +86,6 @@ export struct HomeDailyRecommendCard {
       }
 
 
-
       this.titleColor = [
         [color.setAlpha(0.8).toHex8String(), 0],
         [color.setAlpha(0.5).toHex8String(), 1],
@@ -104,7 +103,7 @@ export struct HomeDailyRecommendCard {
       // 背景图
       ImageKnifeComponent({
         imageKnifeOption: {
-          loadSrc: this.coverImg,
+          loadSrc: Utils.getCoverUrl(this.coverImg),
           objectFit: ImageFit.Cover
         }
       })
@@ -125,7 +124,7 @@ export struct HomeDailyRecommendCard {
           if (this.iconUrl) {
             ImageKnifeComponent({
               imageKnifeOption: {
-                loadSrc: this.iconUrl,
+                loadSrc: Utils.getCoverUrl(this.iconUrl),
                 objectFit: ImageFit.Contain
               }
             })

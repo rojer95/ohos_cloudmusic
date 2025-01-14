@@ -1,21 +1,26 @@
-import { SongDetail } from '../model/song_detail';
+import { SongDetail, SongDetailWithPrivilege, SongPrivilege } from '../model/song_detail';
 import { debuglog } from '../utils/log';
 import { createOption } from './core/createOption';
 import { CommonResponseBody, InputDataType } from './core/interface';
 import { createRequest } from './core/request';
 
 
-
-
 interface ResponseBody extends CommonResponseBody {
   songs: object[];
+  privileges: object[];
 }
 
-export const apiMusicSongDetail = async (ids: string[]): Promise<SongDetail[]> => {
+export const apiMusicSongDetail = async (ids: string[]): Promise<SongDetailWithPrivilege[]> => {
   // const response: AxiosResponse<SongsResult> = await request.get(`/song/detail`, { params: { ids } })
   const responses = await request(ids)
-  debuglog('responses',responses)
-  return responses.body?.songs.map(i => i as SongDetail) || []
+  return responses.body?.songs.map<SongDetailWithPrivilege>(i => {
+    const detail = i as SongDetail;
+    const privilege = responses.body?.privileges?.find((p) => (p as SongPrivilege)?.id === detail.id) as SongPrivilege;
+    return {
+      detail,
+      privilege
+    } as SongDetailWithPrivilege
+  }) || []
 }
 
 

@@ -1,7 +1,7 @@
 import { media } from '@kit.MediaKit';
 import { apiCheckMusic } from '../api/music_check';
 import { apiMusicSongDetail } from '../api/music_song_detail';
-import { SongDetail } from '../model/song_detail';
+import { SongDetail, SongDetailWithPrivilege } from '../model/song_detail';
 import { apiMusicSongUrl } from '../api/music_song_url';
 import { avSession as AVSessionManager } from '@kit.AVSessionKit';
 import hilog from '@ohos.hilog';
@@ -19,6 +19,7 @@ import { apiSemiSong } from '../api/simi_song';
 import { apiSemiArtist } from '../api/simi_artist';
 import { apiArtistSongs } from '../api/artist_songs';
 import { debuglog } from '../utils/log';
+import { SongLevel, SongLevels } from '../common/songLevel';
 
 
 export type PlayType = string
@@ -53,8 +54,6 @@ class Player {
   avPlayer?: media.AVPlayer;
   /** 播控组件 **/
   avSession?: AVSessionManager.AVSession;
-  /** 播放音质等级 standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, jymaster => 超清母带 **/
-  level: string = 'standard';
   /** 0: 免费或无版权 1: VIP 歌曲 4: 购买专辑  8: 非会员可免费播放低音质，会员可播放高音质及下载 **/
   fee?: number
   /** 是否试听 **/
@@ -63,18 +62,18 @@ class Player {
   // songs: SongDetail[] = []
   songIds: number[] = []
   /** 缓存列表 **/
-  cachedSongs: Map<number, SongDetail> = new Map([])
+  cachedSongs: Map<number, SongDetailWithPrivilege> = new Map([])
   /** 相似歌手列表 **/
   similarArtists: number[] = []
   similarArtistsIndex: number = 0;
+  /** 喜欢id列表 **/
+  likeList: number[] = []
   /** 当前播放歌曲ID **/
   @Trace songId?: number;
   /** 歌单名称 **/
   @Trace avQueueName?: string;
   /** 歌单id **/
   @Trace avQueueId?: string;
-  /** 喜欢id列表 **/
-  likeList: number[] = []
   /** 播放器播放状态 **/
   @Trace playingState: string = 'idle'
   /** 当前播放是否喜欢 **/
@@ -99,6 +98,25 @@ class Player {
   @Trace playingArtist: string | undefined = undefined;
   @Trace playingMediaImage: string | undefined = undefined;
   @Trace playingAlbum: string | undefined = undefined;
+  @Trace playingMaxLevel: string | undefined = undefined;
+  /** 播放音质等级 standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, jymaster => 超清母带 **/
+  @Trace level: string = '';
+  /** 是否处于切换音质 **/
+  @Trace isToggleLeveling: boolean = false;
+  /** 切换音质进度临时保持 **/
+  toggleLevelPreTime: undefined | number = undefined;
+
+  @Computed
+  get levelName(): string {
+    let level: undefined | SongLevel = SongLevels.find(i => i.value === this.level);
+    return level?.label || '标准音质'
+  }
+
+  @Computed
+  get activeLevels(): SongLevel[] {
+    const maxLevel = SongLevels.find(l => l.value === this.playingMaxLevel);
+    return SongLevels.filter(l => l.level <= (maxLevel?.level || 0))
+  }
 
   constructor(_context: common.UIAbilityContext) {
     this.context = _context
@@ -222,6 +240,7 @@ class Player {
             })
             break;
           case 'initialized':
+            // debuglog('state', 'initialized')
             this.avPlayer?.prepare()
             this.avSession?.setAVPlaybackState({
               state: AVSessionManager.PlaybackState.PLAYBACK_STATE_BUFFERING,
@@ -229,6 +248,7 @@ class Player {
             })
             break;
           case 'prepared':
+            // debuglog('state', 'prepared')
             // debuglog('this.likeList', this.likeList)
             const isFavorite = this.likeList?.some((i: number) => this.songId === i)
             this.avSession?.setAVPlaybackState({
@@ -236,9 +256,19 @@ class Player {
             })
             // AppStorage.setOrCreate('playingIsFavorite', isFavorite)
             this.playingIsFavorite = isFavorite
+            if (this.isToggleLeveling) {
+              // 移动到上次位置
+              this.avPlayer?.seek(this.toggleLevelPreTime)
+              this.time = this.toggleLevelPreTime
+            }
             this.avPlayer?.play()
             break;
           case 'playing':
+            // debuglog('state', 'playing')
+            if (this.isToggleLeveling) {
+              this.isToggleLeveling = false
+              this.toggleLevelPreTime = undefined
+            }
             this.avSession?.setAVPlaybackState({
               state: AVSessionManager.PlaybackState.PLAYBACK_STATE_PLAY,
               position
@@ -373,6 +403,10 @@ class Player {
    * 播放
    */
   async rePlay() {
+    if (this.isToggleLeveling) {
+      return
+    }
+
     this.avPlayer?.seek(0)
     this.avPlayer?.play()
   }
@@ -381,6 +415,10 @@ class Player {
    * 播放
    */
   async play() {
+    if (this.isToggleLeveling) {
+      return
+    }
+
     // console.log('this.avPlayer?.state', this.avPlayer?.state)
     if (this.avPlayer?.state === 'paused') {
       this.avPlayer?.play()
@@ -391,6 +429,10 @@ class Player {
    * 暂停
    */
   async pause() {
+    if (this.isToggleLeveling) {
+      return
+    }
+
     if (this.avPlayer?.state === 'playing') {
       this.avPlayer?.pause()
     }
@@ -401,6 +443,11 @@ class Player {
    * @param time
    */
   async setSeek(time: number) {
+
+    if (this.isToggleLeveling) {
+      return
+    }
+
     this.avPlayer?.seek(time)
     this.avSession?.setAVPlaybackState({
       position: {
@@ -414,10 +461,10 @@ class Player {
    * 添加到缓存列表
    * @param songs
    */
-  pushToCache(songs: SongDetail[]) {
+  pushToCache(songs: SongDetailWithPrivilege[]) {
     for (const song of songs) {
-      if (!this.cachedSongs.has(song.id)) {
-        this.cachedSongs.set(song.id, song)
+      if (!this.cachedSongs.has(song.detail.id)) {
+        this.cachedSongs.set(song.detail.id, song)
       }
     }
   }
@@ -498,7 +545,7 @@ class Player {
           promptAction.showToast({ message: "歌单获取失败" })
           return
         }
-        this.pushToCache(playlist.tracks || [])
+        // this.pushToCache(playlist.tracks || [])
         this.songIds = (playlist.trackIds?.map(i => i.id || 0) || []).filter(i =>!!i)
         avQueueId = `${playlist.id || ''}`
         avQueueName = `${playlist.name || ''}`
@@ -513,7 +560,7 @@ class Player {
           promptAction.showToast({ message: "歌单获取失败" })
           return
         }
-        this.pushToCache(dailySongsResponse?.dailySongs || [])
+        // this.pushToCache(dailySongsResponse?.dailySongs || [])
         this.songIds = (dailySongsResponse?.dailySongs || []).map(i => i.id)
         avQueueName = `每日推荐`
       }
@@ -527,7 +574,7 @@ class Player {
           promptAction.showToast({ message: "歌单获取失败" })
           return
         }
-        this.pushToCache(playlist || [])
+        // this.pushToCache(playlist || [])
         this.songIds = playlist.map(i => i.id)
         avQueueName = `心动模式`
       }
@@ -550,8 +597,8 @@ class Player {
           promptAction.showToast({ message: "歌单获取失败" })
           return
         }
-        this.pushToCache(songs)
-        this.songIds = songs.map(i => i.id)
+        // this.pushToCache(songs)
+        this.songIds = songs.map(i => i.detail.id)
         avQueueName = '相似歌曲推荐'
       }
 
@@ -575,8 +622,8 @@ class Player {
           promptAction.showToast({ message: "歌单获取失败" })
           return
         }
-        this.pushToCache(songs)
-        this.songIds = songs.map(i => i.id)
+        // this.pushToCache(songs)
+        this.songIds = songs.map(i => i.detail.id)
         avQueueName = options?.avQueueName || ''
       } else {
         promptAction.showToast({ message: `暂不支持的播放方式: ${type}` })
@@ -687,11 +734,11 @@ class Player {
     /**
      * 检查是否可播放
      */
-    const checkResult = await apiCheckMusic(`${song.id}`);
+    const checkResult = await apiCheckMusic(`${song.detail.id}`);
     // console.log('check ---> ', JSON.stringify(checkResult))
 
     if (!checkResult.success) {
-      this.playFailAndNext(songId, `亲爱的，暂时还没有《${song?.name}》的版权`)
+      this.playFailAndNext(songId, `亲爱的，暂时还没有《${song?.detail?.name}》的版权`)
       return
     }
 
@@ -699,7 +746,33 @@ class Player {
      * 获取播放url
      */
 
-    const songUrl = await apiMusicSongUrl(`${song.id}`, this.level)
+    this.playingMaxLevel = song?.privilege?.plLevel
+
+    if (this.playingMaxLevel === 'none') {
+      this.playingMaxLevel = 'standard';
+    }
+
+
+    debuglog('this.playingMaxLevel', this.playingMaxLevel)
+    /**
+     * 如果当前音质超过最大音质，需要降低音质
+     */
+    if (!this.level) {
+      this.level = this.playingMaxLevel;
+    }
+
+
+    const currentLevel = SongLevels.find(l => l.value === this.level);
+    const maxLevel = SongLevels.find(l => l.value === this.playingMaxLevel);
+
+    if (currentLevel && maxLevel && currentLevel?.level > maxLevel?.level) {
+      this.level = this.playingMaxLevel
+    }
+
+    debuglog('this.level', this.level)
+
+
+    const songUrl = await apiMusicSongUrl(`${song.detail.id}`, this.level)
 
     if (!songUrl) {
       this.playFailAndNext(songId, `获取播放url失败`)
@@ -707,7 +780,7 @@ class Player {
     }
 
     // 时长
-    this.duration = song.dt;
+    this.duration = song?.detail.dt;
 
     // 试听
     this.isTry = (songUrl.time || 0) < this.duration;
@@ -716,20 +789,20 @@ class Player {
     this.time = 0
 
     // 当前播放id
-    this.songId = song.id
+    this.songId = song.detail.id
 
 
     // 加载歌词
-    const lyric = await this.loadLyric(String(song.id))
+    const lyric = await this.loadLyric(String(song.detail.id))
 
 
     const playingInfo: AVSessionManager.AVMetadata = {
-      assetId: String(song.id),
-      title: song?.name,
-      artist: song?.ar?.map?.(i => i.name)?.join('/') || '',
-      mediaImage: song?.al?.picUrl,
+      assetId: String(song.detail.id),
+      title: song.detail?.name,
+      artist: song.detail?.ar?.map?.(i => i.name)?.join('/') || '',
+      mediaImage: song.detail?.al?.picUrl,
       duration: this.duration,
-      album: song?.al?.name,
+      album: song.detail?.al?.name,
     }
 
     this.playingTitle = playingInfo.title
@@ -753,7 +826,7 @@ class Player {
     }
 
     const avMetaData: AVSessionManager.AVMetadata = playingInfo
-    avMetaData.mediaImage = `${song?.al?.picUrl}?param=300y300`
+    avMetaData.mediaImage = `${song.detail?.al?.picUrl}?param=300y300`
 
     hilog.info(0, 'Player', 'setPlayingInfo: %{public}s', JSON.stringify(playingInfo))
     hilog.info(0, 'Player', 'setAVMetadata: %{public}s', JSON.stringify(avMetaData))
@@ -780,6 +853,30 @@ class Player {
 
     this.playingRealDuration = songUrl.time || this.duration
     // this.playingTime = this.time
+  }
+
+  /**
+   * 切换音质
+   * @param level
+   */
+  async toggleMusicLevel(level: string) {
+    const songUrl = await apiMusicSongUrl(`${this.songId}`, level)
+    if (!songUrl || !this.avPlayer) {
+      promptAction.showToast({
+        message: '切换音质失败'
+      })
+      return
+    }
+
+    this.level = level
+    this.isToggleLeveling = true;
+    this.toggleLevelPreTime = this.time
+
+    if (this.avPlayer.state !== 'idle') {
+      await this.avPlayer.reset();
+    }
+
+    this.avPlayer.url = songUrl.url
   }
 
   /**
@@ -813,7 +910,7 @@ class Player {
       if (artistId) {
         const songs = await apiArtistSongs(String(artistId));
         const song = songs[this.randomIndex(0, Math.min(4, songs.length - 1))]
-        this.pushToCache([song])
+        // this.pushToCache([song])
         this.pushToIds([song.id])
       }
     }
@@ -827,8 +924,8 @@ class Player {
     if ((currentIndex + 1 >= this.songIds.length || currentIndex === -1) && this.songId) {
       try {
         const fmSongs = await apiSemiSong(String(this.songId))
-        const songs = fmSongs.map(fmSong =>  fmSong as SongDetail);
-        this.pushToCache(songs)
+        const songs = fmSongs.map(fmSong => fmSong as SongDetail);
+        // this.pushToCache(songs)
         this.pushToIds(songs.map(i => i.id))
       } catch (e) {
         console.error(e.stack)
@@ -843,8 +940,8 @@ class Player {
     const currentIndex = this.songIds.findIndex(id => id === this.songId);
     if (currentIndex + 1 >= this.songIds.length || currentIndex === -1) {
       const fmSongs = await apiPersonalFm()
-      const songs = fmSongs.map(fmSong =>  fmSong as SongDetail)
-      this.pushToCache(songs)
+      const songs = fmSongs.map(fmSong => fmSong as SongDetail)
+      // this.pushToCache(songs)
       this.pushToIds(songs.map(i => i.id))
     }
   }
@@ -853,7 +950,9 @@ class Player {
    * 播放下一首
    */
   async playNext() {
-
+    if (this.isToggleLeveling) {
+      return
+    }
     if (this.songIds.length === 0) {
       return
     }
@@ -926,6 +1025,10 @@ class Player {
    * 播放上一首
    */
   async playPrevious() {
+
+    if (this.isToggleLeveling) {
+      return
+    }
 
     if (this.songIds.length === 0) {
       return
