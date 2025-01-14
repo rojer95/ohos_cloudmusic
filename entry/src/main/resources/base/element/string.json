@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "云音乐-听歌客户端"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "云音乐-听歌客户端"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "云音乐"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Volumes/rojer/.ohos/config/default_ohos_cloudmusic_UlOMW5ruZU1tXW8M6tpqhaGK1TjRgXzYjpQ4QmaxHRo=.cer",
+          "storePassword": "0000001B647644EABED4F4900F151F8051D508DDA093B991AACB4DE8C79FA20A51C883159AF453D690B543",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B7FCF30624BD29D28DE781BF51E996D622CFA1DCC21669E0EF874D7F0C28ABEEEAB210C5C801E67",
+          "profile": "/Volumes/rojer/.ohos/config/default_ohos_cloudmusic_UlOMW5ruZU1tXW8M6tpqhaGK1TjRgXzYjpQ4QmaxHRo=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Volumes/rojer/.ohos/config/default_ohos_cloudmusic_UlOMW5ruZU1tXW8M6tpqhaGK1TjRgXzYjpQ4QmaxHRo=.p12"
+        }
+      },
+      {
+        "name": "release",
+        "type": "HarmonyOS",
+        "material": {
+          "storePassword": "0000001BA20613BF605A9461718A88E46BB6FDA33558E6AC1C0C4B693E6B483955BBF613BDE6E851914897",
+          "certpath": "/Volumes/rojer/Documents/ohos_certs/music/music.cer",
+          "keyAlias": "music",
+          "keyPassword": "0000001B5CC3EFE706B5F39424DC35F2E923E09ED91F1052D4E1032736DABBBAD611ACB52ED2468A6301B2",
+          "profile": "/Volumes/rojer/Documents/ohos_certs/music/releaseRelease.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Volumes/rojer/Documents/ohos_certs/music/music.p12"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.1(13)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      },{
+        "name": "release",
+        "signingConfig": "release",
+        "compatibleSdkVersion": "5.0.1(13)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default","release"
+          ]
+        },
+      ]
+    }
+  ]
+}
