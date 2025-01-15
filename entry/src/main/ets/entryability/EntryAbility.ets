@@ -26,18 +26,23 @@ export default class EntryAbility extends UIAbility {
     const global = getGlobal()!
     initPlayer(this.context)
 
-    windowStage.loadContent('pages/Index', async (err) => {
+    windowStage.loadContent('pages/index', async (err) => {
       if (err.code) {
-        debuglog('Ability', `Failed to load the content. Cause: ${JSON.stringify(err) }s`)
+        debuglog('Ability', `Failed to load the content. Cause: ${JSON.stringify(err)}s`)
         return;
       }
 
       // Main window is created, set main page for this ability
       let windowClass: window.Window = windowStage.getMainWindowSync();
-      const type = window.AvoidAreaType.TYPE_SYSTEM; // 以状态栏避让为例
-      const avoidArea = windowClass.getWindowAvoidArea(type);
-      const topRectHeight = avoidArea.topRect.height; // 获取状态栏区域高度
-      global.topRectHeight = topRectHeight
+      // 状态栏高度
+      const topAvoidArea = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      global.topRectHeight = topAvoidArea.topRect.height // 获取状态栏区域高度
+
+      // 导航条高度
+      const bottomAvoidArea = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+      debuglog('bottomAvoidArea', bottomAvoidArea)
+      global.bottomRectHeight = bottomAvoidArea.bottomRect.height
+
       debuglog('Ability', 'Succeeded in loading the content.')
     });
   }

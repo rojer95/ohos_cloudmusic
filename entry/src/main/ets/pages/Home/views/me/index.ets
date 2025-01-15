@@ -14,7 +14,7 @@ export struct MeTabContent {
       if (!this.loginInfo.isLogin) {
         Column() {
           Button('立即登录').onClick(() => {
-            this.pathStack.pushPath({ name: 'Login' })
+            this.pathStack.pushPath({ name: 'LoginPage' })
           }).margin({ top: 12 })
         }.padding(10)
       } else {

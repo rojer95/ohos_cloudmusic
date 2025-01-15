@@ -471,39 +471,31 @@ export struct HomeTabContext {
   }
 
   build() {
-    Flex({ direction: FlexDirection.Column }) {
-      Stack() {
-        Column() {
-          List({ space: PageItemSpace }) {
-            Repeat(this.dataSource).each((item: RepeatItem<HomeBlockItem>) => {
-              this.blockRender(item.item)
-            }).key(item => item.bizCode)
-            ListItem() {
-              if (this.loading) {
-                SwipeRefresher({
-                  content: '正在加载中',
-                  isLoading: true
-                })
-              }
-            }
-          }
-          .width('100%')
-          .height('100%')
-          .scrollBar(BarState.Off)
-          .contentEndOffset(30)
-          .onReachEnd(() => {
-            this.load()
-          })
+    Column() {
+      List({ space: PageItemSpace }) {
+        ListItem() {
+          Column().height(px2vp(this.global?.topRectHeight || 0))
         }
 
-        // 音乐播放栏
-        MusicBar()
+        Repeat(this.dataSource).each((item: RepeatItem<HomeBlockItem>) => {
+          this.blockRender(item.item)
+        }).key(item => item.bizCode)
+        ListItem() {
+          if (this.loading) {
+            SwipeRefresher({
+              content: '正在加载中',
+              isLoading: true
+            })
+          }
+        }
       }
-      .alignContent(Alignment.BottomStart)
       .width('100%')
-      .flexGrow(1)
+      .height('100%')
+      .scrollBar(BarState.Off)
+      .contentEndOffset(30)
+      .onReachEnd(() => {
+        this.load()
+      })
     }
-    .height('100%')
-    .width('100%')
   }
 }

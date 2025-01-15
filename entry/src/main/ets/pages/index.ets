@@ -29,8 +29,8 @@ struct Index {
         await this.player.loadLikeList()
       }
 
-      if (this.pathStack.getParamByName('Home').length === 0) {
-        this.pathStack.pushPath({ name: 'Home' });
+      if (this.pathStack.getParamByName('HomePage').length === 0) {
+        this.pathStack.pushPath({ name: 'HomePage' });
       }
     } catch (e) {
       debuglog('Index', e.message)

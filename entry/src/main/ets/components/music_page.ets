@@ -5,7 +5,7 @@ import { getPlayer, getGlobal, GlobalContent } from '../viewmodel/global';
 import { LyricBox } from './lyric';
 import { emitter } from '@kit.BasicServicesKit';
 import { ImageKnifeComponent } from '@ohos/imageknife';
-import { SongLevel } from '../common/songLevel';
+import { SongLevel } from '../common/song_level';
 import { debuglog } from '../utils/log';
 import { SwipeRefresher } from '@kit.ArkUI';
 

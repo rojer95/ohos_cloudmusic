@@ -3,6 +3,26 @@
     {
       "name": "start_window_background",
       "value": "#000000"
+    },
+    {
+      "name": "music_bar_bg_color",
+      "value": "#D9000000"
+    },
+    {
+      "name": "music_bar_text_color",
+      "value": "#FFA7A7A7"
+    },
+    {
+      "name": "playlist_music_bar_text_color",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "music_bar_progress_bg_color",
+      "value": "#ff5f5f5f"
+    },
+    {
+      "name": "music_bar_progress_color",
+      "value": "#ffcbcbcb"
     }
   ]
 }

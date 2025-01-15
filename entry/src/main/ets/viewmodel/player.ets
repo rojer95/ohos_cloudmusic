@@ -19,7 +19,7 @@ import { apiSemiSong } from '../api/simi_song';
 import { apiSemiArtist } from '../api/simi_artist';
 import { apiArtistSongs } from '../api/artist_songs';
 import { debuglog } from '../utils/log';
-import { SongLevel, SongLevels } from '../common/songLevel';
+import { SongLevel, SongLevels } from '../common/song_level';
 import { HttpProxyCacheServer, HttpProxyCacheServerBuilder } from '@ohos/video-cache';
 import GlobalProxyServer, { MyCacheListener, MyFileNameGenerator, MyHeaderInject } from './cache';
 import fs from '@ohos.file.fs'
@@ -798,7 +798,7 @@ class Player {
      * 如果当前音质超过最大音质，需要降低音质
      */
     if (!this.level) {
-      this.level = this.playingMaxLevel;
+      this.level = this.playingMaxLevel || 'standard';
     }
 
 
@@ -806,7 +806,7 @@ class Player {
     const maxLevel = SongLevels.find(l => l.value === this.playingMaxLevel);
 
     if (currentLevel && maxLevel && currentLevel?.level > maxLevel?.level) {
-      this.level = this.playingMaxLevel
+      this.level = this.playingMaxLevel || 'standard';
     }
 
     debuglog('this.level', this.level)

@@ -1,17 +1,21 @@
 {
   "routerMap": [
     {
-      "name": "Home",
-      "pageSourceFile": "src/main/ets/pages/Home/Index.ets",
+      "name": "HomePage",
+      "pageSourceFile": "src/main/ets/pages/Home/index.ets",
       "buildFunction": "pageBuilder"
     },
     {
-      "name": "Login",
-      "pageSourceFile": "src/main/ets/pages/Login/Index.ets",
+      "name": "LoginPage",
+      "pageSourceFile": "src/main/ets/pages/Login/index.ets",
       "buildFunction": "pageBuilder"
     },{
-      "name": "Playlist",
-      "pageSourceFile": "src/main/ets/pages/Playlist/Index.ets",
+      "name": "PlaylistPage",
+      "pageSourceFile": "src/main/ets/pages/Playlist/index.ets",
+      "buildFunction": "pageBuilder"
+    },{
+      "name": "SearchPage",
+      "pageSourceFile": "src/main/ets/pages/Search/index.ets",
       "buildFunction": "pageBuilder"
     }
   ]

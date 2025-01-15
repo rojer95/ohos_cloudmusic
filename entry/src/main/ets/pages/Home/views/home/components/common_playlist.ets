@@ -153,11 +153,11 @@ export struct CommonPlaylist {
                       'type': 'detail',
                       'detail': detail
                     };
-                  this.pathStack.pushPathByName('Playlist', param)
+                  this.pathStack.pushPathByName('PlaylistPage', param)
                 } else {
 
                   const param: Record<string, string> = { 'id': item.resourceId, 'type': 'id' }
-                  this.pathStack.pushPathByName('Playlist', param)
+                  this.pathStack.pushPathByName('PlaylistPage', param)
                 }
               }
             })

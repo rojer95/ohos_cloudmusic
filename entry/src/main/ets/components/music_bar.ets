@@ -10,12 +10,7 @@ import { Utils } from '../common/utils';
 
 @ComponentV2
 export struct MusicBar {
-  // @StorageProp('playingInfo') playingInfo?: avSession.AVMetadata = undefined
-  // @StorageProp('playingState') @Watch('onPlayChange') playingState: media.AVPlayerState = 'idle'
-  // @StorageProp('playingTime') time: number = 0;
-  // @StorageProp('playingDuration') duration: number = 0;
-  @Param bgColor: string = '#faffffff'
-  @Param textColor: string = '#111111'
+  @Param textColor: Resource | string = $r('app.color.music_bar_text_color')
   @Local player: Player | undefined = getPlayer()
   @Local angle: number = 0
   private ani?: AnimatorResult
@@ -70,7 +65,6 @@ export struct MusicBar {
 
   build() {
     if (this.player?.playingTitle) {
-
       Flex({
         alignItems: ItemAlign.Center,
         justifyContent: FlexAlign.SpaceBetween,
@@ -110,7 +104,7 @@ export struct MusicBar {
         Text() {
           Span(this.player?.playingTitle || '').fontColor(this.textColor).fontSize(14)
           Span(this.player?.playingArtist ? ` - ${this.player?.playingArtist}` : '')
-            .fontColor(tinycolor(this.textColor).setAlpha(0.6).toHex8String()).fontSize(12)
+            .fontColor(this.textColor).fontSize(12).opacity(0.6)
         }
         .width(0)
         .flexGrow(1)
@@ -122,8 +116,8 @@ export struct MusicBar {
           Progress({ value: this.player?.time, total: this.player?.duration, type: ProgressType.Ring })
             .height(20)
             .width(20)
-            .color('#ff5f5f5f')
-            .backgroundColor('#ffcbcbcb')
+            .color($r('app.color.music_bar_progress_color'))
+            .backgroundColor($r('app.color.music_bar_progress_bg_color'))
             .style({
               strokeWidth: 2
             })
@@ -147,13 +141,13 @@ export struct MusicBar {
             }
           })
         }
-      }.padding({
+      }
+      .height('100%')
+      .width('100%')
+      .padding({
         left: PageSpace,
-        top: 4,
         right: PageSpace,
-        bottom: 4
       })
-      .backgroundColor(this.bgColor)
       .onClick(() => {
         let eventData: emitter.EventData = {
           data: {
@@ -164,7 +158,7 @@ export struct MusicBar {
         emitter.emit('globalModal', eventData)
       })
     } else {
-      Column()
+      Column().height(0)
     }
   }
 }

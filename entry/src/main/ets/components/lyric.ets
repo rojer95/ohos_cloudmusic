@@ -16,8 +16,8 @@ export struct LyricBox {
     this.lyricController
     ?.setTextSize(12)
     ?.setCacheSize(4)
-    ?.setTextColor("#66000000")
-    ?.setHighlightColor("#b3000000")
+    ?.setTextColor("#66ffffff")
+    ?.setHighlightColor("#b3ffffff")
     ?.setLineSpace(8)
     ?.setEmptyHint("当前没有歌词")
     ?.setAlignMode("center")

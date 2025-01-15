@@ -20,6 +20,7 @@ export async function destroyPlayer() {
 @ObservedV2
 export class GlobalContent {
   @Trace topRectHeight: number = 0
+  @Trace bottomRectHeight: number = 0
 }
 
 export function getGlobal(): GlobalContent | undefined {

@@ -6,9 +6,11 @@ import { SongDetailWithPrivilege } from "../../model/song_detail";
 import tinycolor from "ohos_tinycolor2";
 import { ImageMainColorResult, Utils } from "../../common/utils";
 import { getGlobal, getPlayer, GlobalContent } from "../../viewmodel/global";
-import { MusicPlayBtn } from "../../components/music_play_btn";
 import { apiMusicSongDetail } from "../../api/music_song_detail";
 import { MusicBar } from "../../components/music_bar";
+import { Player } from "../../viewmodel/player";
+import { TrackDataSource } from "../../model/datasource";
+import { SongItem } from "../../components/song_item";
 
 interface PlaylistParam {
   id: string;
@@ -16,93 +18,9 @@ interface PlaylistParam {
   detail: Playlist;
 }
 
-class BasicDataSource<T> implements IDataSource {
-  private listeners: DataChangeListener[] = [];
-  private originDataArray: T[] = [];
-
-  public totalCount(): number {
-    return 0;
-  }
-
-  public getData(index: number): T {
-    return this.originDataArray[index];
-  }
-
-  registerDataChangeListener(listener: DataChangeListener): void {
-    if (this.listeners.indexOf(listener) < 0) {
-      this.listeners.push(listener);
-    }
-  }
-
-  unregisterDataChangeListener(listener: DataChangeListener): void {
-    const pos = this.listeners.indexOf(listener);
-    if (pos >= 0) {
-      this.listeners.splice(pos, 1);
-    }
-  }
-
-  notifyDataReload(): void {
-    this.listeners.forEach(listener => {
-      listener.onDataReloaded();
-    })
-  }
-
-  notifyDataAdd(index: number): void {
-    this.listeners.forEach(listener => {
-      listener.onDataAdd(index);
-    })
-  }
-
-  notifyDataChange(index: number): void {
-    this.listeners.forEach(listener => {
-      listener.onDataChange(index);
-    })
-  }
-
-  notifyDataDelete(index: number): void {
-    this.listeners.forEach(listener => {
-      listener.onDataDelete(index);
-    })
-  }
-
-  notifyDataMove(from: number, to: number): void {
-    this.listeners.forEach(listener => {
-      listener.onDataMove(from, to);
-    })
-  }
-
-  notifyDatasetChange(operations: DataOperation[]): void {
-    this.listeners.forEach(listener => {
-      listener.onDatasetChange(operations);
-    })
-  }
-}
-
-class TrackDataSource extends BasicDataSource<SongDetailWithPrivilege> {
-  private dataArray: SongDetailWithPrivilege[] = [];
-
-  public totalCount(): number {
-    return this.dataArray.length;
-  }
-
-  public getData(index: number): SongDetailWithPrivilege {
-    return this.dataArray[index];
-  }
-
-  public addData(index: number, data: SongDetailWithPrivilege): void {
-    this.dataArray.splice(index, 0, data);
-    this.notifyDataAdd(index);
-  }
-
-  public pushData(data: SongDetailWithPrivilege): void {
-    this.dataArray.push(data);
-    this.notifyDataAdd(this.dataArray.length - 1);
-  }
-}
-
 
 @Builder
-function pageBuilder(){
+function pageBuilder() {
   PlaylistPage()
 }
 
@@ -116,17 +34,19 @@ struct PlaylistPage {
   scroller: Scroller = new Scroller()
   @Local mainColor: string = '#ff838383';
   @Local mainSecondColor: string = '#ff0c0c0c';
-  @Local titleBgColor: string = '#00ffffff'
-  @Local titleTextColor: string = '#00ffffff'
+  // @Local titleBgColor: string = '#00ffffff'
+  // @Local titleTextColor: string = '#00ffffff'
   @Local global: GlobalContent | undefined = getGlobal()
+  @Local player: Player | undefined = getPlayer()
   @Local tracks: SongDetailWithPrivilege[] = []
   private data: TrackDataSource = new TrackDataSource();
+  @Local titleBarAlp: number = 0
   private loading = false
   private pageSize = 20
   @Local isNotMore: boolean = false
 
   aboutToAppear(): void {
-    const params = this.pathStack.getParamByName("Playlist") as Array<PlaylistParam>
+    const params = this.pathStack.getParamByName("PlaylistPage") as Array<PlaylistParam>
     debuglog('params', params)
     this.playlistId = params?.[0]?.id
     this.playlistType = params?.[0]?.type
@@ -170,7 +90,6 @@ struct PlaylistPage {
       }
     }
   }
-
   loadMore = async () => {
     const loadedCount = this.data.totalCount();
     if (this.isNotMore) {
@@ -331,10 +250,11 @@ struct PlaylistPage {
   buildTitle() {
     Column() {
       Text(this.detail?.name)
-        .fontColor(this.titleTextColor)
+        .fontColor('#FFFFFF')
         .fontSize(16)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .opacity(this.titleBarAlp)
     }
     .padding({ left: 8 })
     .justifyContent(FlexAlign.Center)
@@ -342,79 +262,39 @@ struct PlaylistPage {
   }
 
   @Builder
-  buildFooter() {
-    MusicBar()
-  }
-
-  @Builder
   build() {
     NavDestination() {
-      Flex({ direction: FlexDirection.Column }) {
+      Stack({ alignContent: Alignment.Bottom }) {
         Scroll(this.scroller) {
           Column() {
             this.buildHeader()
             Column() {
-
               List({ space: 6 }) {
-
                 LazyForEach(this.data, (item: SongDetailWithPrivilege, index: number) => {
                   ListItem() {
-                    Flex({ alignItems: ItemAlign.Center }) {
-                      Column() {
-                        Text(`${index + 1}`).fontColor('#FFFFFF')
-                      }.width(50)
-                      .flexShrink(0)
-
-                      Column() {
-                        Text(item.detail.name).fontSize(14).fontColor('#FFFFFF')
-                          .margin({ bottom: 8 })
-                        Row() {
-                          Text([
-                            item.detail.ar?.map(ar => ar.name).join('/'),
-                            item.detail.al?.name
-                          ].filter(i =>!!i).join(' - '))
-                            .maxLines(1)
-                            .textOverflow({ overflow: TextOverflow.Ellipsis })
-                            .fontSize(12)
-                            .fontColor('#FFFFFF')
-                            .opacity(0.6)
+                    SongItem({
+                      index: index + 1,
+                      detail: item.detail,
+                      privilege: item.privilege,
+                      color: '#FFFFFF'
+                    })
+                      .onClick(() => {
+                        // st < 0 没有版权，设置灰色
+                        if ((item?.privilege?.st || 0) < 0) {
+                          return;
                         }
-                      }.alignItems(HorizontalAlign.Start)
-                      .flexGrow(1)
-
-                      Column() {
-                        MusicPlayBtn({
-                          color: '#FFFFFF',
-                          songId: `${item.detail.id}`,
-                        }).width(14).height(14).opacity(0.7)
-                      }
-                    }
-                    .opacity(item.privilege.st < 0 ? 0.7 : 1)
-                    .padding({
-                      top: 10,
-                      bottom: 10,
-                      left: 0,
-                      right: 20
-                    })
-                    .width('100%')
-                    .onClick(() => {
-                      // st < 0 没有版权，设置灰色
-                      if (item.privilege.st < 0) {
-                        return;
-                      }
-                      if (this.playlistType === 'detail') {
-                        getPlayer()?.start(this.detail?.trackIds?.map(i => i.id)?.join(',') || '', 'ids', {
-                          avQueueName: this.detail?.name?.replace(/\s/ig, ''),
-                          songId: String(item.detail.id)
-                        })
-                      } else {
-                        getPlayer()?.start(this.playlistId, 'playList', {
-                          songId: String(item.detail.id)
-                        })
-                      }
-                    })
+                        if (this.playlistType === 'detail') {
+                          getPlayer()?.start(this.detail?.trackIds?.map(i => i.id)?.join(',') || '', 'ids', {
+                            avQueueName: this.detail?.name?.replace(/\s/ig, ''),
+                            songId: String(item.detail.id)
+                          })
+                        } else {
+                          getPlayer()?.start(this.playlistId, 'playList', {
+                            songId: String(item.detail.id)
+                          })
+                        }
+                      })
                   }
-
                 }, (item: SongDetailWithPrivilege) => `${item.detail.id}`)
 
                 if (this.isNotMore) {
@@ -427,13 +307,13 @@ struct PlaylistPage {
                         TextAlign.Center
                       )
                       .padding({ top: 10, bottom: 20 })
+                      .margin({ bottom: px2vp(this.global?.bottomRectHeight || 0) * 2 })
                   }
                 }
               }
             }.padding({ top: 20, bottom: 20 })
           }
         }
-
         .align(Alignment.Top)
         .scrollBar(BarState.Off)
         .onScrollEdge((side) => {
@@ -441,8 +321,9 @@ struct PlaylistPage {
             this.loadMore()
           }
         })
+        .height('100%')
         .onDidScroll(() => {
-          let alp = this.scroller.currentOffset().yOffset / 100
+          let alp = this.scroller.currentOffset().yOffset > 100 ? 1 : 0
           if (alp < 0) {
             alp = 0
           }
@@ -450,23 +331,33 @@ struct PlaylistPage {
             alp = 1
           }
 
-          this.titleBgColor = tinycolor(this.mainColor).setAlpha(alp).toHex8String()
-          this.titleTextColor = tinycolor('#FFFFFF').setAlpha(alp).toHex8String()
+          if (this.titleBarAlp === alp) {
+            return
+          }
+
+
+          this.getUIContext()?.animateTo({
+            duration: 500
+          }, () => {
+            this.titleBarAlp = alp
+          })
+
         })
-        .flexGrow(1)
 
-        Column() {
-          MusicBar({ bgColor: this.mainSecondColor, textColor: '#FFFFFF' })
-        }
-      }
-
+        MusicBar({ textColor: $r('app.color.playlist_music_bar_text_color') })
+          .backgroundBlurStyle(BlurStyle.BACKGROUND_THICK)
+          .height(this.player?.playingTitle ? `${48 + px2vp(this.global?.bottomRectHeight || 0)}vp` : 0).width('100%')
+          .padding({
+            bottom: this.player?.playingTitle ? px2vp(this.global?.bottomRectHeight || 0) : 0
+          })
+      }.height('100%')
     }
     .title(this.buildTitle(), {
       barStyle: BarStyle.STACK,
-      backgroundColor: this.titleBgColor,
+      backgroundBlurStyle: this.titleBarAlp === 0 ? BlurStyle.NONE : BlurStyle.BACKGROUND_THICK
     })
     .backgroundColor(this.mainSecondColor)
     .backButtonIcon($r('app.media.icon_back_white'))
-    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP])
+    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
   }
 }
