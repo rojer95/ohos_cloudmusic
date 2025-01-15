@@ -6,8 +6,6 @@ import { PersistenceV2 } from '@kit.ArkUI';
 import { LoginInfo } from '../api/core/loginInfo';
 import { Player } from '../viewmodel/player';
 import { debuglog } from '../utils/log';
-import { HomePage } from './Home/Index';
-import { PlaylistPage } from './Playlist';
 
 @Entry
 @ComponentV2
@@ -78,17 +76,7 @@ struct Index {
       )
   }
 
-  @Builder
-  PagesMap(name: string) {
 
-    if (name === 'Home') {
-      HomePage()
-    }
-
-    if (name === 'Playlist') {
-      PlaylistPage()
-    }
-  }
 
   build() {
     Navigation(this.pathStack)
@@ -96,8 +84,6 @@ struct Index {
       .hideTitleBar(true)
       .hideBackButton(true)
       .hideToolBar(true)
-      .mode(NavigationMode.Stack)
-      .navDestination(this.PagesMap)
       .bindContentCover(this.globalModal.get('music'), this.buildMusicPage(), {
         modalTransition: ModalTransition.NONE,
         onDisappear: () => {

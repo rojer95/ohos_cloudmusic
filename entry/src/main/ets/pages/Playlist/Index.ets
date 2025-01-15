@@ -10,11 +10,6 @@ import { MusicPlayBtn } from "../../components/music_play_btn";
 import { apiMusicSongDetail } from "../../api/music_song_detail";
 import { MusicBar } from "../../components/music_bar";
 
-@Builder
-export function PageBuilder() {
-  PlaylistPage();
-}
-
 interface PlaylistParam {
   id: string;
   type: string;
@@ -106,8 +101,13 @@ class TrackDataSource extends BasicDataSource<SongDetailWithPrivilege> {
 }
 
 
+@Builder
+function pageBuilder(){
+  PlaylistPage()
+}
+
 @ComponentV2
-export struct PlaylistPage {
+struct PlaylistPage {
   @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
   @Local detail: Playlist | undefined = undefined
   playlistId: string = ''

@@ -109,6 +109,7 @@ class Player {
   toggleLevelPreTime: undefined | number = undefined;
   /** 当前打开的文件，播放缓存歌曲 **/
   openedCacheFile: undefined | fs.File = undefined
+  private _inited: boolean = false
 
   @Computed
   get levelName(): string {
@@ -130,6 +131,9 @@ class Player {
    * 初始化
    */
   async init() {
+    if (this._inited) {
+      return
+    }
     let server: HttpProxyCacheServer = new HttpProxyCacheServerBuilder(getContext())
       // Set the cache folder (that is, folder that stores the cached files) to the cache directory of the application sandbox.
       .cacheDirectory(getContext().cacheDir)
@@ -142,6 +146,7 @@ class Player {
     await this.createAudioSession()
     await this.startContinuousTask()
     this.startListener()
+    this._inited = true
   }
 
   /**

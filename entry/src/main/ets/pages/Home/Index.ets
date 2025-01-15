@@ -4,6 +4,11 @@ import { MusicPage } from '../../components/music_page';
 import { HomeTabContext } from './views/home';
 import { MeTabContent } from './views/me';
 
+@Builder
+function pageBuilder() {
+  HomePage()
+}
+
 interface TabBarProps {
   vertical: boolean;
   barPosition: BarPosition;
@@ -12,25 +17,31 @@ interface TabBarProps {
   compDirection: FlexDirection
 }
 
-
-@Builder
-export function PageBuilder() {
-  NavDestination(){
-    Column(){
-      Text('hjsahdjksna')
-    }.height('100%').width('100%')
-  }
-}
-
-
 @ComponentV2
-export struct HomePage {
+struct HomePage {
   @Local currentTabIndex: number = 0;
-
   @Local tabBarProps: BreakpointState<TabBarProps> = BreakpointState.of({
-    sm: { vertical: false, barPosition: BarPosition.End , compBarWidth: '100%', compBarHeight: '72vp', compDirection: FlexDirection.Column} as TabBarProps,
-    md: { vertical: false, barPosition: BarPosition.End , compBarWidth: '100%', compBarHeight: '56vp', compDirection: FlexDirection.Row} as TabBarProps,
-    lg: { vertical: true, barPosition: BarPosition.Start , compBarWidth: '96vp', compBarHeight: '60%', compDirection: FlexDirection.Column} as TabBarProps,
+    sm: {
+      vertical: false,
+      barPosition: BarPosition.End,
+      compBarWidth: '100%',
+      compBarHeight: '72vp',
+      compDirection: FlexDirection.Column
+    } as TabBarProps,
+    md: {
+      vertical: false,
+      barPosition: BarPosition.End,
+      compBarWidth: '100%',
+      compBarHeight: '56vp',
+      compDirection: FlexDirection.Row
+    } as TabBarProps,
+    lg: {
+      vertical: true,
+      barPosition: BarPosition.Start,
+      compBarWidth: '96vp',
+      compBarHeight: '60%',
+      compDirection: FlexDirection.Column
+    } as TabBarProps,
   })
 
   aboutToAppear() {
@@ -71,6 +82,7 @@ export struct HomePage {
       .height('100%')
   }
 
+  @Builder
   build() {
     NavDestination() {
       Tabs({ barPosition: this.tabBarProps.value?.barPosition }) {

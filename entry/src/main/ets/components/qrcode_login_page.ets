@@ -16,6 +16,7 @@ export struct QrcodeLoginPage {
   @Local showQrcode: boolean = false
   tempCookies: string[] = []
   context: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
+  @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
 
   aboutToAppear(): void {
   }
@@ -63,6 +64,7 @@ export struct QrcodeLoginPage {
         message: '登录成功'
       })
       emitter.emit('logined')
+      this.pathStack.pop()
       return
     }
 

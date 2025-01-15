@@ -1,29 +1,21 @@
 import { PersistenceV2, promptAction } from "@kit.ArkUI"
 import { LoginInfo } from "../../../../api/core/loginInfo"
-import { QrcodeLoginPage } from "../../../../components/qrcode_login_page";
-import { TelLoginPage } from "../../../../components/tel_login_page";
 import emitter from '@ohos.events.emitter';
 
 
 @ComponentV2
 export struct MeTabContent {
   @Local loginInfo: LoginInfo = PersistenceV2.connect(LoginInfo)!
-  @Local qrcode: string = '';
+  @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
 
   build() {
     Column() {
 
       if (!this.loginInfo.isLogin) {
         Column() {
-          Tabs({ barPosition: BarPosition.Start }) {
-            TabContent() {
-              QrcodeLoginPage()
-            }.tabBar('扫码登录')
-
-            // TabContent() {
-            //   TelLoginPage()
-            // }.tabBar('手机登录')
-          }
+          Button('立即登录').onClick(() => {
+            this.pathStack.pushPath({ name: 'Login' })
+          }).margin({ top: 12 })
         }.padding(10)
       } else {
         Column() {
