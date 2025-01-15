@@ -35,8 +35,8 @@ struct Index {
         this.pathStack.pushPath({ name: 'Home' });
       }
     } catch (e) {
-      debuglog('Index',e.message)
-      debuglog('Index',e.stack, 2)
+      debuglog('Index', e.message)
+      debuglog('Index', e.stack, 2)
     }
   }
 
@@ -85,11 +85,10 @@ struct Index {
       HomePage()
     }
 
-    if (name === 'Playlist'){
+    if (name === 'Playlist') {
       PlaylistPage()
     }
   }
-
 
   build() {
     Navigation(this.pathStack)

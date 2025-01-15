@@ -20,7 +20,9 @@ import { apiSemiArtist } from '../api/simi_artist';
 import { apiArtistSongs } from '../api/artist_songs';
 import { debuglog } from '../utils/log';
 import { SongLevel, SongLevels } from '../common/songLevel';
-
+import { HttpProxyCacheServer, HttpProxyCacheServerBuilder } from '@ohos/video-cache';
+import GlobalProxyServer, { MyCacheListener, MyFileNameGenerator, MyHeaderInject } from './cache';
+import fs from '@ohos.file.fs'
 
 export type PlayType = string
 
@@ -105,6 +107,8 @@ class Player {
   @Trace isToggleLeveling: boolean = false;
   /** 切换音质进度临时保持 **/
   toggleLevelPreTime: undefined | number = undefined;
+  /** 当前打开的文件，播放缓存歌曲 **/
+  openedCacheFile: undefined | fs.File = undefined
 
   @Computed
   get levelName(): string {
@@ -126,6 +130,14 @@ class Player {
    * 初始化
    */
   async init() {
+    let server: HttpProxyCacheServer = new HttpProxyCacheServerBuilder(getContext())
+      // Set the cache folder (that is, folder that stores the cached files) to the cache directory of the application sandbox.
+      .cacheDirectory(getContext().cacheDir)
+      .setFileNameGenerator(new MyFileNameGenerator())
+      .maxCacheSize(2048 * 1024 * 1024)
+      .setHeaderInjector(new MyHeaderInject())
+      .build()
+    GlobalProxyServer?.getInstance()?.setServer(server);
     this.avPlayer = await media.createAVPlayer()
     await this.createAudioSession()
     await this.startContinuousTask()
@@ -141,6 +153,10 @@ class Player {
     this.avPlayer = undefined
     await this.destroyAudioSession()
     await this.stopContinuousTask()
+    /** 关闭文件 **/
+    if (this.openedCacheFile) {
+      fs.closeSync(this.openedCacheFile)
+    }
   }
 
   /**
@@ -713,6 +729,25 @@ class Player {
     }, 200)
   }
 
+  private async getUrlWithCache(songUrl: string) {
+    /** 关闭上一首 **/
+    if (this.openedCacheFile) {
+      fs.closeSync(this.openedCacheFile)
+      this.openedCacheFile = undefined
+    }
+
+    GlobalProxyServer.getInstance().setCurrentFileName(`${this.songId}_${this.level}`)
+    let tempUrl = await GlobalProxyServer?.getInstance()?.getServer()?.getProxyUrl(songUrl)
+    let proxyUrl: string | undefined = tempUrl ? tempUrl : songUrl
+    if (proxyUrl.startsWith(this.context!.cacheDir)) {
+      this.openedCacheFile = fs.openSync(proxyUrl, fs.OpenMode.READ_ONLY);
+      proxyUrl = `fd://${this.openedCacheFile.fd}`;
+    }
+
+    debuglog('proxyUrl', proxyUrl)
+    return proxyUrl
+  }
+
   /**
    * 播放歌曲
    * @param song
@@ -845,7 +880,7 @@ class Player {
       await this.avPlayer.reset();
     }
 
-    this.avPlayer.url = songUrl.url
+    this.avPlayer.url = await this.getUrlWithCache(songUrl.url)
     // AppStorage.setOrCreate('playingInfo', playingInfo)
     // AppStorage.setOrCreate('playingDuration', this.duration)
     // AppStorage.setOrCreate('playingRealDuration', songUrl.time || this.duration)
@@ -876,7 +911,7 @@ class Player {
       await this.avPlayer.reset();
     }
 
-    this.avPlayer.url = songUrl.url
+    this.avPlayer.url = await this.getUrlWithCache(songUrl.url)
   }
 
   /**

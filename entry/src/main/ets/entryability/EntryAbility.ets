@@ -6,6 +6,7 @@ import { getGlobal, initPlayer } from '../viewmodel/global';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 
+
 dayjs.extend(duration)
 
 export default class EntryAbility extends UIAbility {
@@ -21,6 +22,7 @@ export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
     debuglog('Ability', 'onWindowStageCreate')
+
     const global = getGlobal()!
     initPlayer(this.context)
 

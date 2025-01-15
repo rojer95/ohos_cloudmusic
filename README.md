@@ -9,8 +9,11 @@
 - [x] 歌词
 - [x] 歌单页
 - [x] 接入鸿蒙播控组件
-- [ ] 搜索歌曲
 - [X] 切换音质
+- [ ] 搜索歌曲
+- [x] 边听边存
+- [ ] 手机号登录
+- [ ] 黑夜模式
 
 
 ## 预览
@@ -22,3 +25,16 @@
 | <img  src="./preview/p4.jpg" width="200" /> | <img  src="./preview/p5.jpg" width="200" /> | <img  src="./preview/p6.jpg" width="200" /> |
 |                     登录页                     |                                             |                                             |
 | <img  src="./preview/p7.jpg" width="200" /> |                                             |                                             |
+
+
+## 使用包
+| 包 | 说明       |
+|:---|:---------|
+| @ohos/axios| http网络通讯 |
+| @ohos/crypto-js| 加密解密库    |
+| dayjs| 时间日期库    |
+| @seagazer/cclyric| 歌词组件     |
+| @ohos/imageknife| 图片缓存组件   |
+| ohos_tinycolor2| 色彩解析库    |
+| @ohos/qr-code-generator| 二维码生成库   |
+| @ohos/video-cache| 音乐缓存组件   |
