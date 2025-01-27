@@ -24,10 +24,11 @@ import { HomeDailyRecommendCardObject } from './components/daily_recommend_card'
 import { apiHomeRecommendPage, ApiHomeRecommendPageParams } from '../../../../api/home_recommend_page';
 import { CommonShortcut, CommonShortcutItem } from './components/common_shortcut';
 import { PersistenceV2, SwipeRefresher } from '@kit.ArkUI';
-import { getGlobal, GlobalContent } from '../../../../viewmodel/global';
+import { getGlobal, GlobalContent, getPlayer } from '../../../../viewmodel/global';
 import emitter from '@ohos.events.emitter';
 import { LoginInfo } from '../../../../api/core/loginInfo';
 import { debuglog } from '../../../../utils/log';
+import { Player } from '../../../../viewmodel/player';
 
 @ComponentV2
 export struct HomeTabContext {
@@ -37,6 +38,7 @@ export struct HomeTabContext {
   @Local dataSource: HomeBlockItem[] = []
   @Local loading: boolean = false;
   @Local global: GlobalContent | undefined = getGlobal()
+  @Local player: Player | undefined = getPlayer()
   @Local loginInfo: LoginInfo | undefined = PersistenceV2.connect(LoginInfo)
 
   aboutToAppear(): void {
@@ -487,7 +489,9 @@ export struct HomeTabContext {
               isLoading: true
             })
           }
-        }
+        }.margin({
+          bottom:  this.player?.playingTitle ? 50:10
+        })
       }
       .width('100%')
       .height('100%')

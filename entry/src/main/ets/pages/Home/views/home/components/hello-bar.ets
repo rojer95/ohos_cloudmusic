@@ -17,7 +17,7 @@ export struct HelloBar {
         .draggable(false)
         .width(24)
         .height(24)
-        .fillColor('#ae000000')
+        .fillColor($r('app.color.music_bar_text_color'))
         .onClick(() => {
           this.pathStack.pushPath({ name: 'SearchPage' })
         })

@@ -125,7 +125,7 @@ struct HomePage {
             direction: FlexDirection.Column,
             justifyContent: FlexAlign.Center,
             alignItems: ItemAlign.Center,
-            space: { main: LengthMetrics.px(8), cross: LengthMetrics.px(8) }
+            space: { main: LengthMetrics.px(8), cross: LengthMetrics.px(8) },
           }) {
             Image(tab.icon)
               .size({ width: 20, height: 20 })
@@ -135,7 +135,9 @@ struct HomePage {
             Text(tab.label)
               .fontColor(this.currentTabIndex === tab.index ? $r('app.color.primary') : '#6c6c77')
               .fontSize(10)
-          }.onClick(() => {
+          }
+          .flexGrow(1)
+          .onClick(() => {
             this.currentTabIndex = tab.index
           })
         }, (tab: Tab) => tab.view)

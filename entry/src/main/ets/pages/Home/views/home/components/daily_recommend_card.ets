@@ -5,6 +5,9 @@ import { HomeBlockResourceItemExtInfo } from '../../../../../model/home_block';
 import { ImageKnifeComponent } from '@ohos/imageknife';
 import { debuglog } from '../../../../../utils/log';
 import { promptAction } from '@kit.ArkUI';
+import { MusicPlayBtn } from '../../../../../components/music_play_btn';
+import { Playlist, TrackId } from '../../../../../model/playlist_detail';
+import { apiDailyRecommendSongs } from '../../../../../api/recommend';
 
 
 const SIZE = 140;
@@ -25,6 +28,7 @@ export interface HomeDailyRecommendCardObject {
 
 @ComponentV2
 export struct HomeDailyRecommendCard {
+  @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
   @Param coverImg: string | undefined = undefined
   @Param subTitle: string | undefined = undefined
   @Param singleLineTitle: string | undefined = undefined
@@ -53,8 +57,8 @@ export struct HomeDailyRecommendCard {
     }
 
     const regions: Array<ImageMainColorRegion> = [
-      { key: 'top', region: [0, 0, 0.4, 0.4] },
-      { key: 'bottom', region: [0.6, 0.6, 1, 1] },
+      { key: 'top', region: [0, 0, 0.3, 0.3] },
+      { key: 'bottom', region: [0.7, 0.7, 1, 1] },
     ]
 
     // 从主图获取配色策略，
@@ -63,17 +67,10 @@ export struct HomeDailyRecommendCard {
     this.img = colors.img
 
     if (colors.colors['top']) {
-      let color = tinyColor.fromEffectKitColor(colors.colors['top'])
-      if (color.getBrightness() >= 230) {
-        color = color.darken(40)
-      }
-      if (color.getBrightness() <= 25) {
-        color = color.lighten(40)
-      }
-
+      let color = tinyColor('#000000')
       this.subTitleColor = [
-        [color.toHex8String(), 0],
-        [color.setAlpha(0.8).toHex8String(), 0.4],
+        [color.setAlpha(0.6).toHex8String(), 0],
+        [color.setAlpha(0.3).toHex8String(), 0.4],
         [color.setAlpha(0).toHex8String(), 0.8],
       ]
     }
@@ -96,6 +93,58 @@ export struct HomeDailyRecommendCard {
 
   aboutToAppear(): void {
     this.loadCoverImg()
+  }
+
+  play() {
+    debuglog('resourceType', this.resourceType);
+    debuglog('resourceId', this.resourceId);
+
+
+    const player = getPlayer()
+    if (!player || !this.resourceId || !this.resourceType) {
+      return;
+    }
+
+    try {
+      const tempId: string[] | number = JSON.parse(this.resourceId);
+      let id: string = ''
+      if (Array.isArray(tempId)) {
+        id = tempId.join(',')
+      } else {
+        id = String(tempId)
+      }
+
+      player.start(id, this.resourceType, {
+        songId: this.extInfo?.songId ? String(this.extInfo?.songId) : undefined
+      })
+    } catch (e) {
+      promptAction.showToast({ message: "暂不支持的特性" })
+    }
+  }
+
+  async gotoDetail() {
+    if (this.resourceType == 'dailySongs') {
+      const dailySongsResponse = await apiDailyRecommendSongs(); // 获取歌单详情
+      const detail: Playlist = {
+        trackIds: (dailySongsResponse.dailySongs || []).map(song => ({
+          id: song.id
+        } as TrackId)),
+        tracks: [],
+        backgroundCoverUrl: this.coverImg,
+        detailPageTitle: dailySongsResponse.recommendReasons?.[0]?.reason,
+        description: dailySongsResponse.recommendReasons?.[1]?.reason,
+        name: dailySongsResponse.recommendReasons?.[0]?.reason,
+      }
+      const param: Record<string, string | Playlist> =
+        {
+          'id': String(this.resourceId),
+          'type': 'detail',
+          'detail': detail
+        };
+      this.pathStack.pushPathByName('PlaylistPage', param)
+      return true
+    }
+    return false
   }
 
   build() {
@@ -156,6 +205,18 @@ export struct HomeDailyRecommendCard {
         }
       }
 
+      if (this.resourceType === 'dailySongs') {
+        MusicPlayBtn({
+          playType: this.resourceType,
+          color: '#FFFFFF'
+        })
+          .onClick(() => {
+            this.play()
+          })
+          .margin({ top: SIZE - 30, left: SIZE - 30 })
+          .width(20)
+          .height(20)
+      }
 
       // 底部标题-单行
       Flex({ alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
@@ -209,27 +270,11 @@ export struct HomeDailyRecommendCard {
       TransitionEffect.OPACITY
         .combine(TransitionEffect.scale({ x: 0.6, y: 0.6 }).animation({ curve: Curve.Ease }))
     )
-
-    .onClick(() => {
-
-      const player = getPlayer()
-      if (!player || !this.resourceId || !this.resourceType) {
-        return;
-      }
-      try {
-        const tempId: string[] | number = JSON.parse(this.resourceId);
-        let id: string = ''
-        if (Array.isArray(tempId)) {
-          id = tempId.join(',')
-        } else {
-          id = String(tempId)
-        }
-
-        player.start(id, this.resourceType, {
-          songId: this.extInfo?.songId ? String(this.extInfo?.songId) : undefined
-        })
-      } catch (e) {
-        promptAction.showToast({ message: "暂不支持的特性" })
+    .onClick(async () => {
+      const isJump = await this.gotoDetail();
+      debuglog('isJump', isJump)
+      if (!isJump) {
+        this.play()
       }
     })
   }

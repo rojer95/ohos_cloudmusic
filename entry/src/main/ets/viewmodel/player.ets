@@ -250,6 +250,7 @@ class Player {
       this.avPlayer.on('stateChange', (state) => {
         // AppStorage.setOrCreate('playingState', state)
         this.playingState = state
+        debuglog('this.playingState',this.playingState)
         const position: AVSessionManager.PlaybackPosition = {
           elapsedTime: this.time || 0,
           updateTime: new Date().getTime(),

@@ -155,7 +155,6 @@ export struct CommonPlaylist {
                     };
                   this.pathStack.pushPathByName('PlaylistPage', param)
                 } else {
-
                   const param: Record<string, string> = { 'id': item.resourceId, 'type': 'id' }
                   this.pathStack.pushPathByName('PlaylistPage', param)
                 }

@@ -5,6 +5,7 @@ import { Player } from '../viewmodel/player';
 export struct MusicPlayBtn {
   @Param songId: string | undefined = undefined
   @Param avQueueId: string | undefined = undefined
+  @Param playType: string | undefined = undefined
   @Param color: string = '#717171'
   @Local isActive: boolean = false;
   @Local player: Player | undefined = getPlayer()
@@ -13,7 +14,9 @@ export struct MusicPlayBtn {
   onActive() {
     if (this.songId) {
       this.isActive = `${this.songId}` === `${this.player?.songId}`
-    } else if (this.avQueueId) {
+    } else if (this.playType) {
+      this.isActive = `${this.playType}` === `${this.player?.type}`
+    }  else if (this.avQueueId) {
       this.isActive = `${this.avQueueId}` === `${this.player?.avQueueId}`
     } else {
       this.isActive = false
