@@ -5,16 +5,15 @@ import { createRequest } from './core/request';
 import { Artist } from '../model/artist';
 
 interface GeneratedTypeLiteralInterface_1 {
-  artists: object[];
 }
 
 interface ResponseBody extends CommonResponseBody {
-  data: GeneratedTypeLiteralInterface_1
+  artists: object[];
 }
 
 export const apiSemiArtist = async (id: string) => {
   const response = await request(id)
-  return response.body?.data.artists.map(i => i as Artist) || []
+  return response.body?.artists.map(i => i as Artist) || []
 }
 
 

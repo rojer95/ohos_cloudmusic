@@ -1,11 +1,12 @@
 import { media } from '@kit.MediaKit';
+import fs from '@ohos.file.fs'
+import { HttpProxyCacheServer, HttpProxyCacheServerBuilder } from '@ohos/video-cache';
+import { avSession as AVSessionManager } from '@kit.AVSessionKit';
+import { promptAction } from '@kit.ArkUI';
 import { apiCheckMusic } from '../api/music_check';
 import { apiMusicSongDetail } from '../api/music_song_detail';
 import { SongDetail, SongDetailWithPrivilege } from '../model/song_detail';
 import { apiMusicSongUrl } from '../api/music_song_url';
-import { avSession as AVSessionManager } from '@kit.AVSessionKit';
-import hilog from '@ohos.hilog';
-import { promptAction } from '@kit.ArkUI';
 import { common, WantAgent, wantAgent } from '@kit.AbilityKit';
 import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
 import { apiPlaylistDetails } from '../api/playlist_detail';
@@ -20,9 +21,7 @@ import { apiSemiArtist } from '../api/simi_artist';
 import { apiArtistSongs } from '../api/artist_songs';
 import { debuglog } from '../utils/log';
 import { SongLevel, SongLevels } from '../common/song_level';
-import { HttpProxyCacheServer, HttpProxyCacheServerBuilder } from '@ohos/video-cache';
-import GlobalProxyServer, { MyCacheListener, MyFileNameGenerator, MyHeaderInject } from './cache';
-import fs from '@ohos.file.fs'
+import GlobalProxyServer, { MyFileNameGenerator, MyHeaderInject } from './cache';
 
 export type PlayType = string
 
@@ -38,7 +37,7 @@ export const LoopNextMap: Record<number, number> = {
   3: 0, // 随机播放 --> 顺序播放
 }
 
-export const FmLoopNextMap: Record<number, number> = {
+export const UnLimitLoopNextMap: Record<number, number> = {
   1: 3, // 单曲循环 --> 随机播放
   3: 1, // 随机播放 --> 单曲循环
 }
@@ -176,7 +175,7 @@ class Player {
 
     // 激活接口要在元数据、控制命令注册完成之后再执行
     await this.avSession.activate();
-    hilog.info(0x0000, 'Player', `session create done : %{public}s`, this.avSession.sessionId);
+    debuglog('Player', `session create done : ` + this.avSession.sessionId)
   }
 
   /**
@@ -209,11 +208,9 @@ class Player {
     try {
       await backgroundTaskManager.startBackgroundRunning(this.context,
         backgroundTaskManager.BackgroundMode.AUDIO_PLAYBACK, wantAgentObj)
-      hilog.info(0, 'Player', `Succeeded in operationing startBackgroundRunning.`);
+      debuglog('Player', `Succeeded in operationing startBackgroundRunning.`)
     } catch (err) {
-      hilog.error(0, 'Player',
-        `Failed to operation startBackgroundRunning. Code is %{public}d, message is %{public}s`, err.code, err.message
-      );
+      debuglog('Player', `Failed to operation startBackgroundRunning. Code is ${err.code}, message is ${err.message}`)
     }
   }
 
@@ -226,11 +223,9 @@ class Player {
     }
     try {
       await backgroundTaskManager.stopBackgroundRunning(this.context)
-      hilog.info(0, 'Player', `Succeeded in operationing stopBackgroundRunning.`);
+      debuglog('Player', `Succeeded in operationing stopBackgroundRunning.`)
     } catch (err) {
-      hilog.error(0, 'Player',
-        `Failed to operation stopBackgroundRunning. Code is %{public}d, message is %{public}s`, err.code, err.message
-      );
+      debuglog('Player', `Failed to operation stopBackgroundRunning. Code is ${err.code}, message is ${err.message}`)
     }
   }
 
@@ -250,7 +245,7 @@ class Player {
       this.avPlayer.on('stateChange', (state) => {
         // AppStorage.setOrCreate('playingState', state)
         this.playingState = state
-        debuglog('this.playingState',this.playingState)
+        debuglog('this.playingState', this.playingState)
         const position: AVSessionManager.PlaybackPosition = {
           elapsedTime: this.time || 0,
           updateTime: new Date().getTime(),
@@ -492,7 +487,16 @@ class Player {
   }
 
   pushToIds(songIds: number[]) {
-    this.songIds.push(...songIds.filter(i =>!this.songIds.includes(i)))
+    this.songIds.push(...songIds.filter(i => !this.songIds.includes(i)))
+  }
+
+  /**
+   * 是否是无限歌单模式
+   * @param type
+   * @returns
+   */
+  isUnLimitMode(type: PlayType) {
+    return ['fm', 'similarSong', 'similarArtist'].includes(type)
   }
 
   /**
@@ -568,7 +572,7 @@ class Player {
           return
         }
         // this.pushToCache(playlist.tracks || [])
-        this.songIds = (playlist.trackIds?.map(i => i.id || 0) || []).filter(i =>!!i)
+        this.songIds = (playlist.trackIds?.map(i => i.id || 0) || []).filter(i => !!i)
         avQueueId = `${playlist.id || ''}`
         avQueueName = `${playlist.name || ''}`
       }
@@ -658,13 +662,10 @@ class Player {
       this.playingType = type;
 
       /**
-       * FM 模式， 播放循环模式进行变更
+       * 无限制模式， 播放循环模式进行变更
        */
-      if (
-      ['fm', 'similarSong', 'similarArtist'].includes(this.type)
-      ) {
-        if (![AVSessionManager.LoopMode.LOOP_MODE_SHUFFLE,
-          AVSessionManager.LoopMode.LOOP_MODE_SINGLE].includes(this.loopMode)) {
+      if (this.isUnLimitMode(this.type)) {
+        if (!Object.keys(UnLimitLoopNextMap).map(i => Number(i)).includes(this.loopMode)) {
           this.oldLoopMode = this.loopMode // 记录旧的循环模式
           this.updateLoopMode(AVSessionManager.LoopMode.LOOP_MODE_SHUFFLE)
         }
@@ -700,8 +701,7 @@ class Player {
 
 
     } catch (e) {
-      hilog.error(0, 'Player', 'play fail: %{public}s', e.message)
-      hilog.error(0, 'Player', 'play fail: %{public}s', e.stack)
+      debuglog('Player', `play fail code is ${e.code} message is ${e.message}`)
     }
   }
 
@@ -869,8 +869,8 @@ class Player {
     const avMetaData: AVSessionManager.AVMetadata = playingInfo
     avMetaData.mediaImage = `${song.detail?.al?.picUrl}?param=300y300`
 
-    hilog.info(0, 'Player', 'setPlayingInfo: %{public}s', JSON.stringify(playingInfo))
-    hilog.info(0, 'Player', 'setAVMetadata: %{public}s', JSON.stringify(avMetaData))
+    debuglog('setPlayingInfo', JSON.stringify(playingInfo))
+    debuglog('setAVMetadata', JSON.stringify(avMetaData))
 
     try {
       await this.avSession?.setAVMetadata(avMetaData)
@@ -939,6 +939,7 @@ class Player {
       // 获取歌手id
       let artistId = this.similarArtists?.[this.similarArtistsIndex];
       this.similarArtistsIndex++;
+      debuglog('artistId', artistId)
 
       if (!artistId) {
         // 不存在歌手id，拉取相似歌手
@@ -948,9 +949,11 @@ class Player {
       }
 
 
+      debuglog('artistId', artistId)
+
       if (artistId) {
         const songs = await apiArtistSongs(String(artistId));
-        const song = songs[this.randomIndex(0, Math.min(4, songs.length - 1))]
+        const song = songs[this.randomIndex(0, songs.length - 1)]
         // this.pushToCache([song])
         this.pushToIds([song.id])
       }
@@ -1009,30 +1012,33 @@ class Player {
     console.log('[PLAY NEXT TYPE]', this.type)
     console.log('[PLAY NEXT CURRENT INDEX]', index)
     console.log('[PLAY NEXT SONG LENGTH]', this.songIds.length)
+
     /**
-     * FM 模式下: 只有顺序模式
+     * 用户点击下一首
+     * 无限制模式 & 单区循环模式
+     * 实际是以顺序播放进行的
      */
-    if (['fm', 'similarSong', 'similarArtist'].includes(this.type || '')) {
+    if (this.isUnLimitMode(this.type || '') || handleMode === AVSessionManager.LoopMode.LOOP_MODE_SINGLE) {
       handleMode = AVSessionManager.LoopMode.LOOP_MODE_SEQUENCE
-
-      if (['similarArtist'].includes(this.type || '')) {
-        await this.loadMoreSemiArtist()
-        // 加载更多相似歌曲
-      }
-
-
-      if (['similarSong'].includes(this.type || '')) {
-        await this.loadMoreSemiSongs()
-        // 加载更多相似歌曲
-
-        debuglog('songIds', this.songIds)
-      }
-
-      if (['fm'].includes(this.type || '')) {
-        await this.loadMoreFmSongs()
-        // 加载更多FM歌曲
-      }
     }
+
+
+    if (this.type === 'similarArtist') {
+      // 加载更多相似歌手的曲
+      await this.loadMoreSemiArtist()
+    }
+
+
+    if (this.type === 'similarSong') {
+      // 加载更多相似歌曲
+      await this.loadMoreSemiSongs()
+    }
+
+    if (this.type === 'fm') {
+      // 加载更多FM歌曲
+      await this.loadMoreFmSongs()
+    }
+
 
     // 顺序播放
     if (handleMode === AVSessionManager.LoopMode.LOOP_MODE_SEQUENCE) {
@@ -1057,9 +1063,8 @@ class Player {
     if (songId !== undefined) {
       await this.playSong(songId)
     } else {
-      promptAction.showToast({ message: '没有可播放的歌曲' })
+      promptAction.showToast({ message: '已经到最后一首了' })
     }
-
   }
 
   /**
@@ -1087,11 +1092,14 @@ class Player {
 
 
     /**
-     * FM 模式下: 只有顺序模式
+     * 用户点击下一首
+     * 无限制模式 & 单区循环模式
+     * 实际是以顺序播放进行的
      */
-    if (['fm', 'similarSong', 'similarArtist'].includes(this.type || '')) {
+    if (this.isUnLimitMode(this.type || '') || handleMode === AVSessionManager.LoopMode.LOOP_MODE_SINGLE) {
       handleMode = AVSessionManager.LoopMode.LOOP_MODE_SEQUENCE
     }
+
 
     // 顺序播放
     if (handleMode === AVSessionManager.LoopMode.LOOP_MODE_SEQUENCE) {
@@ -1115,7 +1123,7 @@ class Player {
     if (songId !== undefined) {
       await this.playSong(songId)
     } else {
-      promptAction.showToast({ message: '没有可播放的歌曲' })
+      promptAction.showToast({ message: '前面没有歌曲了' })
     }
 
   }
@@ -1124,8 +1132,8 @@ class Player {
    * 切换播放模式
    */
   toggleLoopMode() {
-    if (['fm', 'similarSong', 'similarArtist'].includes(this.type || '')) {
-      this.updateLoopMode(FmLoopNextMap[this.loopMode])
+    if (this.isUnLimitMode(this.type || '')) {
+      this.updateLoopMode(UnLimitLoopNextMap[this.loopMode])
     } else {
       this.updateLoopMode(LoopNextMap[this.loopMode])
     }
