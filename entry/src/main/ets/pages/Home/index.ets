@@ -6,6 +6,7 @@ import { getGlobal, getPlayer, GlobalContent } from '../../viewmodel/global';
 import { Player } from '../../viewmodel/player';
 import { HomeTabContext } from './views/home';
 import { MeTabContent } from './views/me';
+import { emitter } from '@kit.BasicServicesKit';
 
 @Builder
 function pageBuilder() {
@@ -138,7 +139,11 @@ struct HomePage {
           }
           .flexGrow(1)
           .onClick(() => {
-            this.currentTabIndex = tab.index
+            if (this.currentTabIndex === tab.index) {
+              emitter.emit('refresh', { data: { 'index': tab.index } })
+            } else {
+              this.currentTabIndex = tab.index
+            }
           })
         }, (tab: Tab) => tab.view)
       }
@@ -173,7 +178,7 @@ struct HomePage {
       .width('100%')
       .overlay(this.buildBar(), { align: Alignment.BottomStart })
     }
-    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.BOTTOM,LayoutSafeAreaEdge.TOP])
+    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.BOTTOM, LayoutSafeAreaEdge.TOP])
     .hideTitleBar(true)
     .hideToolBar(true)
   }

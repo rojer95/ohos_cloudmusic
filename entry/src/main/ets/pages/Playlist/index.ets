@@ -11,6 +11,9 @@ import { MusicBar } from "../../components/music_bar";
 import { Player } from "../../viewmodel/player";
 import { TrackDataSource } from "../../model/datasource";
 import { SongItem } from "../../components/song_item";
+import { LengthMetrics, LengthMetricsUnit, PersistenceV2 } from "@kit.ArkUI";
+import { LoginInfo } from "../../viewmodel/loginInfo";
+import { playlistSubscribe } from "../../api/playlist_subscribe";
 
 interface PlaylistParam {
   id: string;
@@ -27,8 +30,9 @@ function pageBuilder() {
 @ComponentV2
 struct PlaylistPage {
   @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
+  @Local loginInfo: LoginInfo = PersistenceV2.connect(LoginInfo)!
   @Local detail: Playlist | undefined = undefined
-  playlistId: string = ''
+  @Local playlistId: string = ''
   @Local playlistType: string = ''
   playlistDetail?: Playlist
   scroller: Scroller = new Scroller()
@@ -52,6 +56,10 @@ struct PlaylistPage {
     this.playlistType = params?.[0]?.type
     this.playlistDetail = params?.[0]?.detail
     this.load()
+  }
+
+  reloadDetail = async  ()=>{
+    this.detail = await apiPlaylistDetails(this.playlistId)
   }
 
   load = async () => {
@@ -90,6 +98,7 @@ struct PlaylistPage {
       }
     }
   }
+
   loadMore = async () => {
     const loadedCount = this.data.totalCount();
     if (this.isNotMore) {
@@ -120,6 +129,22 @@ struct PlaylistPage {
   }
 
   @Builder
+  buildSubButton(justifyContent?: FlexAlign) {
+    if (this.playlistId && this.detail?.creator?.userId !== this.loginInfo?.account?.id) {
+      Flex({ justifyContent }) {
+        Button(`${this.detail?.subscribed ? '取消收藏' : '收藏歌单'}`)
+          .backgroundColor('#39ffffff')
+          .fontSize(12)
+          .height(24)
+          .onClick(async ()=>{
+            await playlistSubscribe(this.playlistId, !this.detail?.subscribed)
+            await this.reloadDetail()
+          })
+      }.margin({ top: 12 }).width('100%')
+    }
+  }
+
+  @Builder
   buildHeader() {
     if (this.detail?.backgroundCoverUrl) {
       Stack({ alignContent: this.playlistType === 'detail' ? Alignment.Center : Alignment.Bottom }) {
@@ -136,12 +161,17 @@ struct PlaylistPage {
         .height(350).backgroundColor('#ff000000').opacity(0.5)
 
         Column() {
-          Text(this.detail?.detailPageTitle?.replace(/\s/ig, ''))
-            .fontColor('#FFFFFF')
-            .fontSize(28)
-            .fontWeight(700)
-            .textAlign(TextAlign.Center)
-            .width('100%')
+          Flex({ justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+            Text(this.detail?.detailPageTitle?.replace(/\s/ig, ''))
+              .fontColor('#FFFFFF')
+              .fontSize(28)
+              .fontWeight(700)
+              .textAlign(TextAlign.Center)
+          }.width('100%')
+
+          this.buildSubButton(FlexAlign.Center)
+
+
           Text(this.detail?.updateFrequency)
             .fontColor('#FFFFFF')
             .fontSize(10)
@@ -159,6 +189,7 @@ struct PlaylistPage {
         }.padding({
           top: this.playlistType === 'detail' ? 40 : 0
         })
+
       }
     } else if (this.detail?.coverImgUrl) {
       Column() {
@@ -182,6 +213,9 @@ struct PlaylistPage {
             }
             .alignItems(HorizontalAlign.Start)
             .width('100%')
+
+            this.buildSubButton()
+
 
             Flex({ alignItems: ItemAlign.Center }) {
               ImageKnifeComponent({

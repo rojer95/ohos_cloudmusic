@@ -4,7 +4,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from '@ohos/axios';
 import { cookieToJson, cookieObjToString, toBoolean } from './index'
 import { CommonResponse, CommonResponseBody, InputDataType, RequestOptions } from './interface';
 import { buffer, url } from '@kit.ArkTS';
-import { LoginInfo } from './loginInfo';
+import { LoginInfo } from '../../viewmodel/loginInfo';
 import { PersistenceV2, promptAction } from '@kit.ArkUI';
 import { debuglog } from '../../utils/log';
 

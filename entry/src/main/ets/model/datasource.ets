@@ -1,3 +1,4 @@
+import { PlaylistItem } from '../api/user_playlist';
 import { SongDetailWithPrivilege } from './song_detail';
 
 class BasicDataSource<T> implements IDataSource {
@@ -84,6 +85,34 @@ export class TrackDataSource extends BasicDataSource<SongDetailWithPrivilege> {
   }
 
   public pushData(data: SongDetailWithPrivilege): void {
+    this.dataArray.push(data);
+    this.notifyDataAdd(this.dataArray.length - 1);
+  }
+}
+
+
+export class PlaylistDataSource extends BasicDataSource<PlaylistItem> {
+  private dataArray: PlaylistItem[] = [];
+
+  public totalCount(): number {
+    return this.dataArray.length;
+  }
+
+  public getData(index: number): PlaylistItem {
+    return this.dataArray[index];
+  }
+
+  public clean(): void {
+    this.dataArray = []
+    this.notifyDataReload();
+  }
+
+  public addData(index: number, data: PlaylistItem): void {
+    this.dataArray.splice(index, 0, data);
+    this.notifyDataAdd(index);
+  }
+
+  public pushData(data: PlaylistItem): void {
     this.dataArray.push(data);
     this.notifyDataAdd(this.dataArray.length - 1);
   }

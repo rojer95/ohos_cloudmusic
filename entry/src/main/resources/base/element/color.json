@@ -2,11 +2,11 @@
   "color": [
     {
       "name": "primary",
-      "value": "#eb007a"
+      "value": "#FFEB0000"
     },
     {
       "name": "start_window_background",
-      "value": "#eb007a"
+      "value": "#FFEB0000"
     },
     {
       "name": "music_bar_text_color",

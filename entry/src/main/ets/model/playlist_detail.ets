@@ -7,6 +7,7 @@ export class TrackId {
 
 
 export class PlaylistCreator {
+  userId?: number;
   nickname?: string;
   avatarUrl?: string;
 }
@@ -25,6 +26,11 @@ export class Playlist {
   creator?: PlaylistCreator
   trackIds?: TrackId[];
   tracks?: SongDetail[];
+  subscribed?: boolean
+  subscribedCount?: number
+  cloudTrackCount?: number
+  trackCount?: number
+  playCount?: number
 }
 
 export class PlaylistDetailResponseData {

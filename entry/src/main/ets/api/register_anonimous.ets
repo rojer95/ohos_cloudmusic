@@ -5,7 +5,7 @@ import { createOption } from "./core/createOption";
 import { CommonResponseBody } from "./core/interface";
 import { createRequest } from "./core/request";
 import { PersistenceV2 } from "@kit.ArkUI";
-import { LoginInfo } from "./core/loginInfo";
+import { LoginInfo } from "../viewmodel/loginInfo";
 
 const ID_XOR_KEY_1 = '3go8&$8*3*3h0k(2)2'
 
@@ -45,11 +45,10 @@ interface ResponseBody extends CommonResponseBody {
   cookie: string
 }
 
-export const registerAnonimous = async (resourceManager: resourceManager.ResourceManager) => {
-  const loginInfo = PersistenceV2.connect(LoginInfo)
-  if (!loginInfo?.deviceId) {
+export const registerAnonimous = async (loginInfo: LoginInfo, resourceManager: resourceManager.ResourceManager) => {
+  if (!loginInfo.deviceId) {
     const deviceId = await getRandomFromList(getDeviceIdList(resourceManager))
-    loginInfo!.deviceId = deviceId
+    loginInfo.deviceId = deviceId
   }
 
   const encodedId = CryptoJS.enc.Base64.stringify(
@@ -67,13 +66,13 @@ export const registerAnonimous = async (resourceManager: resourceManager.Resourc
   let result = await createRequest<ResponseBody>(
     `/api/register/anonimous`,
     data,
-    createOption(undefined, 'weapi'),
+    createOption({ 'cookie': '{}', 'deviceId': loginInfo.deviceId }, 'weapi'),
   )
 
   if (result?.body?.code === 200) {
     result.status = 200;
     result.body.cookie = result.cookie.join(';')
-    loginInfo!.cookie = result.body.cookie
+    loginInfo.cookie = result.body.cookie
   }
 
   return result

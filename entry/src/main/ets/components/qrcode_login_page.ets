@@ -3,10 +3,7 @@ import { qrcodegen } from '@ohos/qr-code-generator'
 import { loginQrCheckApi } from "../api/login_qr_check";
 import { debuglog } from "../utils/log";
 import { PersistenceV2, promptAction } from "@kit.ArkUI";
-import { LoginInfo } from "../api/core/loginInfo";
-import { loginStatusApi } from "../api/login_status";
-import { generateConfig } from "../api/core/generateConfig";
-import emitter from '@ohos.events.emitter';
+import { LoginInfo } from "../viewmodel/loginInfo";
 
 @ComponentV2
 export struct QrcodeLoginPage {
@@ -17,31 +14,36 @@ export struct QrcodeLoginPage {
   tempCookies: string[] = []
   context: CanvasRenderingContext2D = new CanvasRenderingContext2D(new RenderingContextSettings(true))
   @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
+  t?: number
 
   aboutToAppear(): void {
   }
 
+  aboutToDisappear(): void {
+    if (this.t) {
+      clearTimeout(this.t)
+      this.t = undefined
+    }
+  }
+
   login = async () => {
-    const status = await loginStatusApi();
-    debuglog('status', status)
+    this.showQrcode = true
+    const res = await loginQrKeyApi()
+    if (res.body?.unikey) {
+      this.qrkey = res?.body?.unikey
+      const qrcode: qrcodegen.QrCode =
+        qrcodegen.QrCode.encodeText(`https://music.163.com/login?codekey=${res.body?.unikey}`,
+          qrcodegen.QrCode.Ecc.MEDIUM)
+      qrcode.drawCanvas(8, 1, this.context)
+      this.tempCookies = res.cookie
 
-    if (status.body?.account?.anonimousUser) {
-      this.showQrcode = true
-      const res = await loginQrKeyApi()
-      if (res.body?.unikey) {
-        this.qrkey = res?.body?.unikey
-        const qrcode: qrcodegen.QrCode =
-          qrcodegen.QrCode.encodeText(`https://music.163.com/login?codekey=${res.body?.unikey}`,
-            qrcodegen.QrCode.Ecc.MEDIUM)
-        qrcode.drawCanvas(8, 1, this.context)
-        this.tempCookies = res.cookie
-
-        setTimeout(() => {
-          this.check()
-        }, 1000)
+      if (this.t) {
+        clearTimeout(this.t)
+        this.t = undefined
       }
-    } else {
-      this.loginInfo.setLoginState(true, status?.body?.profile?.nickname || '', status?.body?.profile?.avatarUrl || '')
+      this.t = setTimeout(() => {
+        this.check()
+      }, 1000)
     }
   }
   check = async () => {
@@ -57,18 +59,17 @@ export struct QrcodeLoginPage {
 
 
     if (res.body?.code === 803) {
-      this.loginInfo.cookie = res.cookie.join(';')
       this.tempCookies = []
-      await generateConfig(this.loginInfo, getContext(this).resourceManager)
+      this.loginInfo.cookie = res.cookie.join(';')
+      await this.loginInfo.loadLoginStatus()
       promptAction.showToast({
         message: '登录成功'
       })
-      emitter.emit('logined')
       this.pathStack.pop()
       return
     }
 
-    setTimeout(() => {
+   this.t = setTimeout(() => {
       this.check()
     }, 1000)
 

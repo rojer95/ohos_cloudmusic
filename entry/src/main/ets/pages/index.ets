@@ -3,9 +3,14 @@ import { emitter } from '@kit.BasicServicesKit';
 import { generateConfig } from '../api/core/generateConfig';
 import { getPlayer } from '../viewmodel/global';
 import { PersistenceV2 } from '@kit.ArkUI';
-import { LoginInfo } from '../api/core/loginInfo';
+import { LoginInfo } from '../viewmodel/loginInfo';
 import { Player } from '../viewmodel/player';
 import { debuglog } from '../utils/log';
+
+// 接受序列化失败的回调
+PersistenceV2.notifyOnError((key: string, reason: string, msg: string) => {
+  console.error(`error key: ${key}, reason: ${reason}, message: ${msg}`);
+});
 
 @Entry
 @ComponentV2
@@ -21,6 +26,7 @@ struct Index {
   async onInit() {
     try {
       const context: Context = getContext(this);
+      debuglog('LoginInfo', this.loginInfo, 2)
       await generateConfig(this.loginInfo, context.resourceManager)
       if (!this.player.avPlayer) {
         await this.player?.init()

@@ -2,8 +2,7 @@ import { BusinessError, emitter } from "@kit.BasicServicesKit";
 import { webview } from "@kit.ArkWeb";
 import { debuglog } from "../utils/log";
 import { PersistenceV2, promptAction } from "@kit.ArkUI";
-import { LoginInfo } from "../api/core/loginInfo";
-import { generateConfig } from "../api/core/generateConfig";
+import { LoginInfo } from "../viewmodel/loginInfo";
 
 @ComponentV2
 export struct TelLoginPage {
@@ -22,12 +21,11 @@ export struct TelLoginPage {
           if (cookie.indexOf('__remember_me=true') > 0) {
             clearInterval(this.timer)
             this.timer = undefined
-            this.loginInfo.cookie = cookie
-            await generateConfig(this.loginInfo, getContext(this).resourceManager)
+            this.loginInfo.cookie = cookie;
+            await this.loginInfo.loadLoginStatus()
             promptAction.showToast({
               message: '登录成功'
             })
-            emitter.emit('logined')
             this.pathStack.pop()
             return
           }

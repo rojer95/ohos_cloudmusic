@@ -1,19 +1,13 @@
 import { createOption } from "./core/createOption"
 import { CommonResponseBody, InputDataType } from "./core/interface"
+import { UserAccount, UserProfile } from "../viewmodel/loginInfo";
 import { createRequest } from "./core/request"
 
-interface GeneratedTypeLiteralInterface_1 {
-  anonimousUser?: boolean;
-}
 
-interface GeneratedTypeLiteralInterface_2 {
-  avatarUrl: string;
-  nickname: string;
-}
 
 interface ResponseBody extends CommonResponseBody {
-  account?: GeneratedTypeLiteralInterface_1;
-  profile?: GeneratedTypeLiteralInterface_2
+  account?: UserAccount;
+  profile?: UserProfile
 }
 
 

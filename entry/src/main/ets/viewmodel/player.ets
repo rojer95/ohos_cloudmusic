@@ -1155,7 +1155,9 @@ class Player {
    * 加载喜欢列表
    */
   async loadLikeList() {
-    this.likeList = await apiLikeList()
+    if (this._inited) {
+      this.likeList = await apiLikeList()
+    }
   }
 
   /**

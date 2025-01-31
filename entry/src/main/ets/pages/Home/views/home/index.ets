@@ -1,5 +1,4 @@
 import { PageItemSpace } from '../../../../common/vars';
-import { MusicBar } from '../../../../components/music_bar';
 import {
   HomeBlockResponse,
   HomeBlockItem,
@@ -26,7 +25,7 @@ import { CommonShortcut, CommonShortcutItem } from './components/common_shortcut
 import { PersistenceV2, SwipeRefresher } from '@kit.ArkUI';
 import { getGlobal, GlobalContent, getPlayer } from '../../../../viewmodel/global';
 import emitter from '@ohos.events.emitter';
-import { LoginInfo } from '../../../../api/core/loginInfo';
+import { LoginInfo } from '../../../../viewmodel/loginInfo';
 import { debuglog } from '../../../../utils/log';
 import { Player } from '../../../../viewmodel/player';
 
@@ -51,12 +50,19 @@ export struct HomeTabContext {
   }
 
   onEventListing() {
+    emitter.on('refresh', (data) => {
+      if (data.data?.['index'] === 0){
+        this.load(true)
+      }
+    })
+
     emitter.on('logined', (data) => {
       this.load(true)
     })
   }
 
   offEventListing() {
+    emitter.off('refresh')
     emitter.off('logined')
   }
 
@@ -249,7 +255,7 @@ export struct HomeTabContext {
           title: `${
           ['PAGE_RECOMMEND_RADAR', 'PAGE_RECOMMEND_MY_SHEET'].includes(block.bizCode)
             ?
-            (this.loginInfo?.nickname ? `${this.loginInfo?.nickname}的` : '') : ''
+            (this.loginInfo?.profile?.nickname ? `${this.loginInfo?.profile?.nickname}的` : '') : ''
           }${(block.dslData as PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST.Data)?.blockResource?.title}`,
           dslShowTitle: (block.dslData as PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST.Data)?.dslShowTitle
         })
@@ -490,7 +496,7 @@ export struct HomeTabContext {
             })
           }
         }.margin({
-          bottom:  this.player?.playingTitle ? 50:10
+          bottom: this.player?.playingTitle ? 50 : 10
         })
       }
       .width('100%')
