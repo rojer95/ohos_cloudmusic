@@ -101,6 +101,7 @@ class Player {
   @Trace playingAlbum: string | undefined = undefined;
   @Trace playingMaxLevel: string | undefined = undefined;
   /** 播放音质等级 standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, jymaster => 超清母带 **/
+  @Trace userLevel: string = '';
   @Trace level: string = '';
   /** 是否处于切换音质 **/
   @Trace isToggleLeveling: boolean = false;
@@ -788,19 +789,19 @@ class Player {
 
 
     debuglog('this.playingMaxLevel', this.playingMaxLevel)
+
     /**
-     * 如果当前音质超过最大音质，需要降低音质
+     * 默认按用户选择音质
+     * 如果用户选择的音质超过当前音乐可播放最大音质，需要降低音质到最大可播放音质
      */
-    if (!this.level) {
-      this.level = this.playingMaxLevel || 'standard';
-    }
+    this.level = this.userLevel || 'standard';
 
 
-    const currentLevel = SongLevels.find(l => l.value === this.level);
-    const maxLevel = SongLevels.find(l => l.value === this.playingMaxLevel);
+    const userSelectLevel = SongLevels.find(l => l.value === this.userLevel);
+    const maxCanPlayLevel = SongLevels.find(l => l.value === this.playingMaxLevel);
 
-    if (currentLevel && maxLevel && currentLevel?.level > maxLevel?.level) {
-      this.level = this.playingMaxLevel || 'standard';
+    if (userSelectLevel && maxCanPlayLevel && userSelectLevel?.level > maxCanPlayLevel?.level) {
+      this.level = maxCanPlayLevel.value
     }
 
     debuglog('this.level', this.level)
@@ -902,7 +903,8 @@ class Player {
       return
     }
 
-    this.level = level
+    this.userLevel = level // 保存用户选择音质
+    this.level = level // 设置当前播放音质
     this.isToggleLeveling = true;
     this.toggleLevelPreTime = this.time
 

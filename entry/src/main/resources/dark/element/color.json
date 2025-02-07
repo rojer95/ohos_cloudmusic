@@ -23,6 +23,10 @@
     {
       "name": "music_bar_progress_color",
       "value": "#ffcbcbcb"
+    },
+    {
+      "name": "tab_text_color_un_active",
+      "value": "#FFE2E2E2"
     }
   ]
 }

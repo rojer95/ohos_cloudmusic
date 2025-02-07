@@ -48,62 +48,11 @@ struct HomePage {
     },
   ]
 
-  /**
-   @Local tabBarProps: BreakpointState<TabBarProps> = BreakpointState.of({
-   sm: {
-   vertical: false,
-   barPosition: BarPosition.End,
-   compBarWidth: '100%',
-   compBarHeight: '72vp',
-   compDirection: FlexDirection.Column
-   } as TabBarProps,
-   md: {
-   vertical: false,
-   barPosition: BarPosition.End,
-   compBarWidth: '100%',
-   compBarHeight: '56vp',
-   compDirection: FlexDirection.Row
-   } as TabBarProps,
-   lg: {
-   vertical: true,
-   barPosition: BarPosition.Start,
-   compBarWidth: '96vp',
-   compBarHeight: '60%',
-   compDirection: FlexDirection.Column
-   } as TabBarProps,
-   })
-
-   **/
 
   aboutToAppear() {
-    // BreakpointSystem.getInstance().attach(this.tabBarProps)
-    // BreakpointSystem.getInstance().start()
   }
 
   aboutToDisappear() {
-    // BreakpointSystem.getInstance().detach(this.tabBarProps)
-    // BreakpointSystem.getInstance().stop()
-  }
-
-  @Builder
-  tabBuilder(title: string, targetIndex: number, icon: Resource) {
-    Flex({
-      direction: FlexDirection.Column,
-      justifyContent: FlexAlign.Center,
-      alignItems: ItemAlign.Center,
-      space: { main: LengthMetrics.px(8), cross: LengthMetrics.px(8) }
-    }) {
-      Image(icon)
-        .size({ width: 20, height: 20 })
-        .fillColor(this.currentTabIndex === targetIndex ? $r('app.color.primary') : '#6c6c77')
-        .draggable(false)
-
-      Text(title)
-        .fontColor(this.currentTabIndex === targetIndex ? $r('app.color.primary') : '#6c6c77')
-        .fontSize(12)
-    }
-    .width('100%')
-    .margin({ bottom: px2vp(this.global?.bottomRectHeight || 0) })
   }
 
   @Builder
@@ -130,11 +79,11 @@ struct HomePage {
           }) {
             Image(tab.icon)
               .size({ width: 20, height: 20 })
-              .fillColor(this.currentTabIndex === tab.index ? $r('app.color.primary') : '#6c6c77')
+              .fillColor(this.currentTabIndex === tab.index ? $r('app.color.primary') : $r('app.color.tab_text_color_un_active'))
               .draggable(false)
 
             Text(tab.label)
-              .fontColor(this.currentTabIndex === tab.index ? $r('app.color.primary') : '#6c6c77')
+              .fontColor(this.currentTabIndex === tab.index ? $r('app.color.primary') :  $r('app.color.tab_text_color_un_active'))
               .fontSize(10)
           }
           .flexGrow(1)
