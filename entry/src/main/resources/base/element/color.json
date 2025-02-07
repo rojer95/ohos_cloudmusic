@@ -9,6 +9,10 @@
       "value": "#FFEB0000"
     },
     {
+      "name": "normal_text_color",
+      "value": "#111111"
+    },
+    {
       "name": "music_bar_text_color",
       "value": "#111111"
     },

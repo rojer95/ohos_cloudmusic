@@ -1,8 +1,8 @@
 {
   "app": {
     "bundleName": "com.rojer.music",
-    "patchVersionCode": 2000125,
-    "versionCode": 1000002
+    "patchVersionCode": 2000126,
+    "versionCode": 1000003
   },
   "module": {
     "name": "entry",

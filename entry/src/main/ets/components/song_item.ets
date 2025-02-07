@@ -1,4 +1,5 @@
 import { SongDetail, SongPrivilege } from "../model/song_detail";
+import { MusicCached } from "./music_cached";
 import { MusicPlayBtn } from "./music_play_btn";
 
 @ComponentV2
@@ -22,12 +23,13 @@ export struct SongItem {
           Text([
             this.detail.ar?.map(ar => ar.name).join('/'),
             this.detail.al?.name
-          ].filter(i =>!!i).join(' - '))
+          ].filter(i => !!i).join(' - '))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .fontSize(12)
             .fontColor(this.color)
             .opacity(0.6)
+          MusicCached({ songId: `${this.detail.id}`, color: this.color }).height(12).width(12).margin({ left: 4 })
         }
       }.alignItems(HorizontalAlign.Start)
       .flexGrow(1)

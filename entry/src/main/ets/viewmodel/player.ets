@@ -150,6 +150,15 @@ class Player {
   }
 
   /**
+   * 判断是否存在缓存
+   * @param filename
+   * @returns
+   */
+  private  hasCache(filename:string){
+    return fs.accessSync(getContext().cacheDir+'/'+filename)
+  }
+
+  /**
    * 释放资源
    */
   async release() {
@@ -736,7 +745,7 @@ class Player {
       this.openedCacheFile = undefined
     }
 
-    GlobalProxyServer.getInstance().setCurrentFileName(`${this.songId}_${this.level}`)
+    GlobalProxyServer.getInstance().setCurrentFileName(`${this.songId}/${this.level}.mp3`)
     let tempUrl = await GlobalProxyServer?.getInstance()?.getServer()?.getProxyUrl(songUrl)
     let proxyUrl: string | undefined = tempUrl ? tempUrl : songUrl
     if (proxyUrl.startsWith(this.context!.cacheDir)) {
@@ -766,16 +775,7 @@ class Player {
       return
     }
 
-    /**
-     * 检查是否可播放
-     */
-    const checkResult = await apiCheckMusic(`${song.detail.id}`);
-    // console.log('check ---> ', JSON.stringify(checkResult))
 
-    if (!checkResult.success) {
-      this.playFailAndNext(songId, `亲爱的，暂时还没有《${song?.detail?.name}》的版权`)
-      return
-    }
 
     /**
      * 获取播放url
@@ -806,6 +806,19 @@ class Player {
 
     debuglog('this.level', this.level)
 
+
+    /**
+     * 检查是否可播放
+     */
+    const hasCache = this.hasCache(`${this.songId}_${this.level}`);
+
+    if (!hasCache) {
+      const checkResult = await apiCheckMusic(`${song.detail.id}`);
+      if (!checkResult.success) {
+        this.playFailAndNext(songId, `亲爱的，暂时还没有《${song?.detail?.name}》的版权`)
+        return
+      }
+    }
 
     const songUrl = await apiMusicSongUrl(`${song.detail.id}`, this.level)
 
@@ -881,13 +894,7 @@ class Player {
     }
 
     this.avPlayer.url = await this.getUrlWithCache(songUrl.url)
-    // AppStorage.setOrCreate('playingInfo', playingInfo)
-    // AppStorage.setOrCreate('playingDuration', this.duration)
-    // AppStorage.setOrCreate('playingRealDuration', songUrl.time || this.duration)
-    // AppStorage.setOrCreate('playingTime', this.time)
-
     this.playingRealDuration = songUrl.time || this.duration
-    // this.playingTime = this.time
   }
 
   /**
