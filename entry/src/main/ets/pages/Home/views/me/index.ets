@@ -278,7 +278,7 @@ export struct MeTabContent {
                   // 歌单封面
                   ImageKnifeComponent({
                     imageKnifeOption: {
-                      loadSrc: Utils.getCoverUrl(item.coverImgUrl, 30, 30)
+                      loadSrc: Utils.getCoverUrl(item.coverImgUrl, 90, 90)
                     }
                   })
                     .borderRadius(6)

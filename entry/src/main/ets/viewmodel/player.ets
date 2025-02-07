@@ -23,7 +23,7 @@ import { debuglog } from '../utils/log';
 import { SongLevel, SongLevels } from '../common/song_level';
 import GlobalProxyServer, { MyFileNameGenerator, MyHeaderInject } from './cache';
 
-export type PlayType = string
+export type PlayType = 'fm' | 'similarSong' | 'similarArtist' | 'star' | 'playList' | 'dailySongs' | 'ids'
 
 export interface PlayOptions {
   avQueueName?: string;
@@ -50,7 +50,7 @@ class Player {
   /** 当前播放列表的唯一ID **/
   uuid?: string;
   /** 当前播放模式 **/
-  type?: string;
+  type?: PlayType;
   /** 播放媒体对象 **/
   avPlayer?: media.AVPlayer;
   /** 播控组件 **/
@@ -495,8 +495,8 @@ class Player {
    * @param type
    * @returns
    */
-  isUnLimitMode(type: PlayType) {
-    return ['fm', 'similarSong', 'similarArtist'].includes(type)
+  isUnLimitMode(type?: PlayType) {
+    return type && ['fm', 'similarSong', 'similarArtist'].includes(type)
   }
 
   /**
@@ -506,7 +506,8 @@ class Player {
    * @param options 配置
    * @returns
    */
-  async start(id: string, type: PlayType, options?: PlayOptions): Promise<void> {
+  async start(id: string, type: string,
+    options?: PlayOptions): Promise<void> {
     try {
 
 
@@ -555,17 +556,9 @@ class Player {
 
 
       /**
-       * 歌曲模式
-       */
-      if (type === 'song') {
-        this.songIds = [Number(id)]
-        avQueueName = '歌曲'
-      }
-
-      /**
        * 歌单模式
        */
-      else if (type === 'playList' || type === 'list' || type === 'toplist') {
+      if (type === 'playList' || type === 'list' || type === 'toplist') {
         const playlist = await apiPlaylistDetails(id); // 获取歌单详情
         if (!playlist) {
           promptAction.showToast({ message: "歌单获取失败" })
@@ -657,7 +650,7 @@ class Player {
       }
 
       this.uuid = _uuid
-      this.type = type;
+      this.type = type as PlayType;
       // AppStorage.setOrCreate('playingType', type)
       this.playingType = type;
 
@@ -1018,7 +1011,7 @@ class Player {
      * 无限制模式 & 单区循环模式
      * 实际是以顺序播放进行的
      */
-    if (this.isUnLimitMode(this.type || '') || handleMode === AVSessionManager.LoopMode.LOOP_MODE_SINGLE) {
+    if (this.isUnLimitMode(this.type) || handleMode === AVSessionManager.LoopMode.LOOP_MODE_SINGLE) {
       handleMode = AVSessionManager.LoopMode.LOOP_MODE_SEQUENCE
     }
 
@@ -1096,7 +1089,7 @@ class Player {
      * 无限制模式 & 单区循环模式
      * 实际是以顺序播放进行的
      */
-    if (this.isUnLimitMode(this.type || '') || handleMode === AVSessionManager.LoopMode.LOOP_MODE_SINGLE) {
+    if (this.isUnLimitMode(this.type) || handleMode === AVSessionManager.LoopMode.LOOP_MODE_SINGLE) {
       handleMode = AVSessionManager.LoopMode.LOOP_MODE_SEQUENCE
     }
 
@@ -1132,7 +1125,7 @@ class Player {
    * 切换播放模式
    */
   toggleLoopMode() {
-    if (this.isUnLimitMode(this.type || '')) {
+    if (this.isUnLimitMode(this.type)) {
       this.updateLoopMode(UnLimitLoopNextMap[this.loopMode])
     } else {
       this.updateLoopMode(LoopNextMap[this.loopMode])

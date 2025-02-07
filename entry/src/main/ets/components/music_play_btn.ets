@@ -10,7 +10,7 @@ export struct MusicPlayBtn {
   @Local isActive: boolean = false;
   @Local player: Player | undefined = getPlayer()
 
-  @Monitor('songId', 'avQueueId', 'player.songId', 'player.avQueueId')
+  @Monitor('songId', 'playType','avQueueId', 'player.type', 'player.songId', 'player.avQueueId')
   onActive() {
     if (this.songId) {
       this.isActive = `${this.songId}` === `${this.player?.songId}`
@@ -21,6 +21,10 @@ export struct MusicPlayBtn {
     } else {
       this.isActive = false
     }
+  }
+
+  aboutToAppear(): void {
+    this.onActive()
   }
 
   build() {
