@@ -18,7 +18,7 @@ import {
 import { HomeDailyRecommend } from './components/daily_recommend';
 import { HelloBar } from './components/hello-bar';
 import { RecommendRedSimilarSong } from './components/recommend_private_rcmd_song';
-import { CommonPlaylist, CommonPlaylistItem } from './components/common_playlist';
+import { CommonPlaylistItem, CommonPlaylistResourcesItem } from './components/common_playlist';
 import { HomeDailyRecommendCardObject } from './components/daily_recommend_card';
 import { apiHomeRecommendPage, ApiHomeRecommendPageParams } from '../../../../api/home_recommend_page';
 import { CommonShortcut, CommonShortcutItem } from './components/common_shortcut';
@@ -236,11 +236,11 @@ export struct HomeTabContext {
         block.bizCode === 'PAGE_RECOMMEND_COMBINATION'
     ) {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources:
           ((block.dslData as PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST.Data)?.blockResource?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.playCount || item.resourceInteractInfo?.playCount,
               resourceId: item.resourceId,
@@ -267,10 +267,10 @@ export struct HomeTabContext {
     /** 排行榜 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_RANK') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_RANK.Data)?.rcmd_rank_module_l0hao53bru?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.playCount,
               resourceId: item.resourceId,
@@ -290,10 +290,10 @@ export struct HomeTabContext {
     /** 定位地推荐歌单 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_LBS') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_LBS.Data)?.home_position_rank_module_naik97twi1?.blockResourceVO?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.playCount,
               resourceId: item.resourceId,
@@ -315,10 +315,10 @@ export struct HomeTabContext {
     /** 奖项音乐 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_AWARDS_PLAYLIST') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_AWARDS_PLAYLIST.Data)?.home_page_common_playlist_module_d1r94fwj80?.blockResource?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.playCount,
               resourceId: item.resourceId,
@@ -338,10 +338,10 @@ export struct HomeTabContext {
     /** 影视原声音乐 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_FIRM_PLAYLIST') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_FIRM_PLAYLIST.Data)?.home_page_common_playlist_module_d1r94fwj80?.blockResource?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.playCount,
               resourceId: item.resourceId,
@@ -361,10 +361,10 @@ export struct HomeTabContext {
     /** 场景歌单 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_common_playlist_module_85enrjqhk4?.blockResource?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.resourceInteractInfo?.playCount,
               resourceId: item.resourceId,
@@ -381,10 +381,10 @@ export struct HomeTabContext {
 
     } else if (block.bizCode === 'PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION.Data)?.home_page_common_playlist_module_65o1euutmu?.blockResource?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.resourceInteractInfo?.playCount,
               resourceId: item.resourceId,
@@ -404,10 +404,10 @@ export struct HomeTabContext {
     /** 歌手推荐歌单 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_MIXED_ARTIST_PLAYLIST') {
       ListItem() {
-        CommonPlaylist({
+        CommonPlaylistItem({
           resources: ((block.dslData as PAGE_RECOMMEND_MIXED_ARTIST_PLAYLIST.Data)?.blockResource?.resources ||
             []).map(item => {
-            const commonPlaylistItem: CommonPlaylistItem = {
+            const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item?.resourceInteractInfo?.playCount,
               resourceType: item.resourceType,

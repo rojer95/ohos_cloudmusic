@@ -10,10 +10,10 @@ import { apiMusicSongDetail } from "../../api/music_song_detail";
 import { MusicBar } from "../../components/music_bar";
 import { Player } from "../../viewmodel/player";
 import { TrackDataSource } from "../../model/datasource";
-import { SongItem } from "../../components/song_item";
-import { LengthMetrics, LengthMetricsUnit, PersistenceV2 } from "@kit.ArkUI";
+import { PersistenceV2 } from "@kit.ArkUI";
 import { LoginInfo } from "../../viewmodel/loginInfo";
 import { playlistSubscribe } from "../../api/playlist_subscribe";
+import { CommonSongList } from "../../components/common_song_list";
 
 interface PlaylistParam {
   id: string;
@@ -45,7 +45,7 @@ struct PlaylistPage {
   @Local tracks: SongDetailWithPrivilege[] = []
   private data: TrackDataSource = new TrackDataSource();
   @Local titleBarAlp: number = 0
-  private loading = false
+  @Local loading: boolean = false
   private pageSize = 20
   @Local isNotMore: boolean = false
 
@@ -58,10 +58,9 @@ struct PlaylistPage {
     this.load()
   }
 
-  reloadDetail = async  ()=>{
+  reloadDetail = async () => {
     this.detail = await apiPlaylistDetails(this.playlistId)
   }
-
   load = async () => {
     if (!this.playlistId) {
       return;
@@ -98,7 +97,6 @@ struct PlaylistPage {
       }
     }
   }
-
   loadMore = async () => {
     const loadedCount = this.data.totalCount();
     if (this.isNotMore) {
@@ -136,7 +134,7 @@ struct PlaylistPage {
           .backgroundColor('#39ffffff')
           .fontSize(12)
           .height(24)
-          .onClick(async ()=>{
+          .onClick(async () => {
             await playlistSubscribe(this.playlistId, !this.detail?.subscribed)
             await this.reloadDetail()
           })
@@ -302,50 +300,25 @@ struct PlaylistPage {
         Scroll(this.scroller) {
           Column() {
             this.buildHeader()
-            Column() {
-              List({ space: 6 }) {
-                LazyForEach(this.data, (item: SongDetailWithPrivilege, index: number) => {
-                  ListItem() {
-                    SongItem({
-                      index: index + 1,
-                      detail: item.detail,
-                      privilege: item.privilege,
-                      color: '#FFFFFF'
-                    })
-                      .onClick(() => {
-                        // st < 0 没有版权，设置灰色
-                        if ((item?.privilege?.st || 0) < 0) {
-                          return;
-                        }
-                        if (this.playlistType === 'detail') {
-                          getPlayer()?.start(this.detail?.trackIds?.map(i => i.id)?.join(',') || '', 'ids', {
-                            avQueueName: this.detail?.name?.replace(/\s/ig, ''),
-                            songId: String(item.detail.id)
-                          })
-                        } else {
-                          getPlayer()?.start(this.playlistId, 'playList', {
-                            songId: String(item.detail.id)
-                          })
-                        }
-                      })
-                  }
-                }, (item: SongDetailWithPrivilege) => `${item.detail.id}`)
-
-                if (this.isNotMore) {
-                  ListItem() {
-                    Text('没有更多歌曲')
-                      .fontSize(12)
-                      .fontColor('#9affffff')
-                      .width('100%')
-                      .textAlign(
-                        TextAlign.Center
-                      )
-                      .padding({ top: 10, bottom: 20 })
-                      .margin({ bottom: px2vp(this.global?.bottomRectHeight || 0) * 2 })
-                  }
+            CommonSongList({
+              data: this.data,
+              loading: this.loading,
+              isNotMore: this.isNotMore,
+              color: '#FFFFFF',
+              onMusicClick: (item: SongDetailWithPrivilege) => {
+                if (this.playlistType === 'detail') {
+                  getPlayer()?.start(this.playlistId, 'ids', {
+                    avQueueName: this.detail?.name?.replace(/\s/ig, ''),
+                    songId: String(item.detail.id),
+                    ids: this.detail?.trackIds?.map(i => String(i.id))
+                  })
+                } else {
+                  getPlayer()?.start(this.playlistId, 'playList', {
+                    songId: String(item.detail.id)
+                  })
                 }
               }
-            }.padding({ top: 20, bottom: 20 })
+            })
           }
         }
         .align(Alignment.Top)

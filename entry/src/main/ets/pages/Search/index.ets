@@ -1,20 +1,10 @@
-import { Playlist } from "../../model/playlist_detail";
 import { debuglog } from "../../utils/log";
-import { SongDetailWithPrivilege } from "../../model/song_detail";
 import { getGlobal, getPlayer, GlobalContent } from "../../viewmodel/global";
-import { apiMusicSongDetail } from "../../api/music_song_detail";
 import { MusicBar } from "../../components/music_bar";
 import { Player } from "../../viewmodel/player";
 import { TrackDataSource } from "../../model/datasource";
 import { apiSearch } from "../../api/search";
-import { BusinessError } from "@kit.BasicServicesKit";
-import { SongItem } from "../../components/song_item";
-
-interface PlaylistParam {
-  id: string;
-  type: string;
-  detail: Playlist;
-}
+import { CommonSongList } from "../../components/common_song_list";
 
 
 @Builder
@@ -29,48 +19,37 @@ struct SearchPage {
   scroller: Scroller = new Scroller()
   @Local global: GlobalContent | undefined = getGlobal()
   @Local player: Player | undefined = getPlayer()
-  private data: TrackDataSource = new TrackDataSource();
-  private loading = false
+  @Local loading: boolean = false
   private _offset = 0;
   @Local hasMore: boolean = true
+  private datasource = new TrackDataSource()
 
   aboutToAppear(): void {
   }
 
-  load = async () => {
+  onSearch = async () => {
     debuglog('this.keyword', this.keyword)
     if (!this.keyword.trim()) {
       return;
     }
+    this.datasource.clean();
     this._offset = 0;
     this.hasMore = true;
-    this.data.clean();
     this.loadMore()
   }
   loadMore = async () => {
     if (this.loading || !this.hasMore) {
       return;
     }
-
     this.loading = true
-
     try {
       const result = await apiSearch(this.keyword, this._offset)
-      const songs = await apiMusicSongDetail(result?.songs?.map?.(i => String(i.id)) || [])
-
-
-      for (const detail of songs) {
-        debuglog('detail', detail, 2)
-        this.data.pushData(detail)
+      const ids = result?.songs?.map?.(i => String(i.id)) || []
+      if (ids.length > 0) {
+        await this.datasource.pushBySongIds(ids);
       }
-
       this._offset += (result?.songs || []).length
-      this.hasMore = !!result?.hasMore
-      debuglog('hasMore', `${this.hasMore}`)
-      debuglog('len', `${this.data.totalCount()}`)
-      // debuglog('this.isNotMore', this.isNotMore)
-    } catch (e) {
-      debuglog('search', (e as BusinessError).message)
+      this.hasMore = result?.hasMore ?? false
     } finally {
       this.loading = false
     }
@@ -83,10 +62,10 @@ struct SearchPage {
         .enterKeyType(EnterKeyType.Search)
         .defaultFocus(true)
         .onSubmit(() => {
-          this.load()
+          this.onSearch()
         })
       Text('搜索').margin({ left: 12, right: 12 }).flexShrink(0).onClick(() => {
-        this.load()
+        this.onSearch()
       })
     }
     .padding({ left: 8 })
@@ -99,44 +78,19 @@ struct SearchPage {
       Stack({ alignContent: Alignment.Bottom }) {
         Scroll(this.scroller) {
           Column() {
-            Column() {
-              List({ space: 6 }) {
-                LazyForEach(this.data, (item: SongDetailWithPrivilege, index: number) => {
-                  ListItem() {
-                    SongItem({
-                      index: index + 1,
-                      detail: item.detail,
-                      privilege: item.privilege,
-                    })
-                      .onClick(() => {
-                        // st < 0 没有版权，设置灰色
-                        if ((item?.privilege?.st ?? 0) < 0) {
-                          return;
-                        }
-                        getPlayer()?.start(`${item.detail.id}`, 'ids', {
-                          avQueueName: item.detail.name,
-                          songId: `${item.detail.id}`
-                        })
-                      })
-                  }
-
-                }, (item: SongDetailWithPrivilege) => `${item.detail.id}`)
-
-                if (!this.hasMore) {
-                  ListItem() {
-                    Text('没有更多歌曲')
-                      .fontSize(12)
-                      .fontColor('#9a000000')
-                      .width('100%')
-                      .textAlign(
-                        TextAlign.Center
-                      )
-                      .padding({ top: 10, bottom: 20 })
-                      .margin({ bottom: px2vp(this.global?.bottomRectHeight || 0) * 2 })
-                  }
-                }
-              }
-            }.padding({ top: 20, bottom: 20 })
+            CommonSongList({
+              data: this.datasource,
+              isNotMore: this.hasMore !== true,
+              loading: this.loading,
+              showCover: true,
+              onMusicClick: (music) => {
+                getPlayer()?.start('search', 'ids', {
+                  ids: [String(music.detail.id)],
+                  songId: String(music.detail.id),
+                  avQueueName: music.detail.name
+                })
+              },
+            })
           }
         }
         .align(Alignment.Top)

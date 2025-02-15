@@ -5,10 +5,12 @@ import { userDetailApi, UserDetailResponseBody } from "../../../../api/user_deta
 import { debuglog } from "../../../../utils/log";
 import emitter from '@ohos.events.emitter';
 import { PlaylistItem, userPlaylistApi } from "../../../../api/user_playlist";
-import { PlaylistDataSource } from "../../../../model/datasource";
+import { PlaylistDataSource, TrackDataSource } from "../../../../model/datasource";
 import { Utils } from '../../../../common/utils'
 import { Player } from "../../../../viewmodel/player";
 import { getGlobal, getPlayer, GlobalContent } from "../../../../viewmodel/global";
+import { CacheUtil } from '../../../../viewmodel/cache';
+import { CommonSongList } from "../../../../components/common_song_list";
 
 @ObservedV2
 class UserDetail {
@@ -38,18 +40,43 @@ class UserDetail {
   }
 }
 
+interface TabItem {
+  key: 'playlist' | 'cached';
+  name: string;
+}
+
 @ComponentV2
 export struct MeTabContent {
+  tabs: Array<TabItem> = [
+    { key: 'playlist', name: '我的歌单' },
+    { key: 'cached', name: '缓存歌曲' },
+  ]
   @Local loginInfo: LoginInfo = PersistenceV2.connect(LoginInfo)!
   @Local detail?: UserDetail = undefined
-  scroller: Scroller = new Scroller()
   @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
   @Local player: Player | undefined = getPlayer()
   @Local global: GlobalContent | undefined = getGlobal()
-  private data: PlaylistDataSource = new PlaylistDataSource();
-  @Local _loading: boolean = false
-  @Local isNotMore: boolean = false
-  @Local tabKey: string = 'playlist'
+  @Local playlistLoading: boolean = false
+  @Local isPlaylistNotMore: boolean = false
+  @Local isCacheSongNotMore: boolean = false
+  @Local cacheSongLoading: boolean = false
+  @Local tabKey: 'playlist' | 'cached' = 'playlist'
+  @Local cachedSongIds: Array<string> = [];
+  private playlist: PlaylistDataSource = new PlaylistDataSource();
+  private scroller: Scroller = new Scroller()
+  private cacheDatasource = new TrackDataSource()
+
+  @Monitor('tabKey')
+  onTabKeyChange() {
+
+    if (this.tabKey === 'playlist') {
+      this.loadPlaylist()
+    }
+
+    if (this.tabKey === 'cached') {
+      this.loadCachedList()
+    }
+  }
 
   aboutToAppear(): void {
     this.load()
@@ -61,8 +88,6 @@ export struct MeTabContent {
   }
 
   onEventListing() {
-
-
     emitter.on('refresh', (data) => {
       if (data.data?.['index'] === 1) {
         this.load()
@@ -91,7 +116,6 @@ export struct MeTabContent {
         this.detail.fill(res);
       }
       this.loadPlaylist()
-
     }
   }
 
@@ -100,21 +124,21 @@ export struct MeTabContent {
       return;
     }
 
-    this.isNotMore = false
-    this.data.clean()
+    this.isPlaylistNotMore = false
+    this.playlist.clean()
     this.loadMorePlaylist();
   }
   loadMorePlaylist = async () => {
-    const loadedCount = this.data.totalCount();
-    if (this.isNotMore) {
+    const loadedCount = this.playlist.totalCount();
+    if (this.isPlaylistNotMore) {
       return
     }
 
-    if (this._loading) {
+    if (this.playlistLoading) {
       return;
     }
 
-    this._loading = true
+    this.playlistLoading = true
 
     try {
 
@@ -122,22 +146,51 @@ export struct MeTabContent {
       debuglog('playlist', playlistRes)
 
       for (const playlistItem of playlistRes?.playlist || []) {
-        this.data.pushData(playlistItem)
+        this.playlist.pushData(playlistItem)
 
       }
-      this.isNotMore = !playlistRes?.more
+      this.isPlaylistNotMore = !playlistRes?.more
 
       // debuglog('this.isNotMore', this.isNotMore)
     } finally {
-      this._loading = false
+      this.playlistLoading = false
     }
   }
 
+  loadCachedList = () => {
+    this.cachedSongIds = CacheUtil.loadSongIds()
+    this.isCacheSongNotMore = false;
+    this.cacheDatasource.clean()
+    this.loadMoreCache()
+  }
+  loadMoreCache = async () => {
+    if (this.isCacheSongNotMore) {
+      return
+    }
+
+    if (this.cacheSongLoading) {
+      return;
+    }
+
+    this.cacheSongLoading = true
+
+    try {
+      const loadedCount = this.cacheDatasource.totalCount();
+      const ids = this.cachedSongIds.slice(loadedCount, loadedCount + 20);
+      if (ids.length > 0) {
+        await this.cacheDatasource.pushBySongIds(ids)
+      }
+      this.isCacheSongNotMore = this.cachedSongIds.length >= this.cacheDatasource.totalCount()
+    } finally {
+      this.cacheSongLoading = false
+    }
+  }
+
+  /**
+   * 顶部用户信息
+   */
   @Builder
   buildHeader() {
-    /**
-     * 顶部用户信息
-     */
     Stack() {
       // 背景
       if (this.loginInfo.isLogin) {
@@ -255,35 +308,27 @@ export struct MeTabContent {
         ]
       })
     }.height(300).width('100%')
-
   }
 
+  /**
+   * tabs
+   */
   @Builder
   buildTabs() {
     Flex({ justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
-      Stack() {
-        Text('歌单')
-        Column().height(2).width(18).backgroundColor(
-          this.tabKey === 'playlist' ? $r('app.color.primary') :
-            '#00ffffff').offset({ top: 4 })
-      }
-      .alignContent(Alignment.Bottom)
-      .flexShrink(0)
-      .onClick(() => {
-        this.tabKey = 'playlist'
-      })
-
-      Stack() {
-        Text('已缓存')
-        Column().height(2).width(18).backgroundColor(
-          this.tabKey === 'cached' ? $r('app.color.primary') :
-            '#00ffffff').offset({ top: 4 })
-      }
-      .alignContent(Alignment.Bottom)
-      .flexShrink(0)
-      .margin({ left: 20 })
-      .onClick(() => {
-        this.tabKey = 'cached'
+      ForEach(this.tabs, (tab: TabItem) => {
+        Stack() {
+          Text(tab.name).fontSize(14)
+          Column().height(2).width(14).backgroundColor(
+            this.tabKey === tab.key ? $r('app.color.primary') :
+              '#00ffffff').offset({ top: 4 })
+        }
+        .alignContent(Alignment.Bottom)
+        .flexShrink(0)
+        .margin({ right: 24 })
+        .onClick(() => {
+          this.tabKey = tab.key
+        })
       })
     }
     .width('100%')
@@ -291,6 +336,10 @@ export struct MeTabContent {
 
   }
 
+  /**
+   * 歌单项
+   * @param item
+   */
   @Builder
   buildPlaylistItem(item: PlaylistItem) {
     Flex({ alignItems: ItemAlign.Center }) {
@@ -340,9 +389,12 @@ export struct MeTabContent {
     })
   }
 
+  /**
+   * 加载更多
+   */
   @Builder
   buildLoadMore() {
-    if (this._loading) {
+    if (this.playlistLoading) {
       ListItem() {
         SwipeRefresher({
           content: '正在加载中',
@@ -353,7 +405,7 @@ export struct MeTabContent {
       })
     }
 
-    if (this.isNotMore) {
+    if (this.isPlaylistNotMore) {
       ListItem() {
         Text('没有更多歌单')
           .fontSize(12)
@@ -368,29 +420,72 @@ export struct MeTabContent {
     }
   }
 
+  /**
+   * 歌单列表
+   */
+  @Builder
+  buildPlaylist() {
+    Column() {
+      List({ space: 6 }) {
+        LazyForEach(this.playlist, (item: PlaylistItem) => {
+          ListItem() {
+            this.buildPlaylistItem(item)
+          }
+        }, (i: PlaylistItem) => `${i.id}`)
+        this.buildLoadMore()
+      }
+    }
+  }
+
+  @Builder
+  buildCachedList() {
+    CommonSongList({
+      data: this.cacheDatasource,
+      showCover: true,
+      isNotMore: this.isCacheSongNotMore,
+      loading: this.cacheSongLoading,
+      onMusicClick: (music) => {
+        getPlayer()?.start('cached', 'ids', {
+          ids: this.cachedSongIds,
+          songId: String(music.detail.id),
+          avQueueName: '缓存的歌曲'
+        })
+      },
+      deleteAble: true,
+      onDelete: music => {
+        CacheUtil.removeBySongId(music.detail.id).then(() => {
+          this.cacheDatasource.deleteBySongId(`${music.detail.id}`)
+        })
+      }
+    })
+  }
+
   build() {
     Scroll(this.scroller) {
       Column() {
         this.buildHeader()
         this.buildTabs()
-        Column() {
-          List({ space: 6 }) {
-            LazyForEach(this.data, (item: PlaylistItem) => {
-              ListItem() {
-                this.buildPlaylistItem(item)
-              }
-            }, (i: PlaylistItem) => `${i.id}`)
-            this.buildLoadMore()
-          }
+        if (this.tabKey === 'playlist') {
+          this.buildPlaylist()
         }
-      }
-
+        if (this.tabKey === 'cached') {
+          this.buildCachedList()
+        }
+      }.margin({
+        bottom: this.player?.playingTitle ? 50 : 10
+      })
     }
     .align(Alignment.Top)
     .scrollBar(BarState.Off)
     .onScrollEdge((side) => {
       if (side === Edge.Bottom) {
-        this.loadMorePlaylist()
+        if (this.tabKey === 'playlist') {
+          this.loadMorePlaylist()
+        }
+
+        if (this.tabKey === 'cached') {
+          this.loadMoreCache()
+        }
       }
     })
     .height('100%')

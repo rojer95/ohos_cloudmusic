@@ -34,18 +34,26 @@ export struct LyricBox {
     this.lyricController?.setLyric(null);
 
     setTimeout(() => {
-      const lyricList = (this.player?.playingLyric || '').split('\n').filter(i => String(i || '').trim()) || []
-      if (lyricList.length === 0) {
-        this.lyricController?.setLyric(null)
-        return;
+
+      try {
+        const lyricList = (this.player?.playingLyric || '').split('\n').filter(i => String(i || '').trim()) || []
+        if (lyricList.length === 0) {
+          this.lyricController?.setLyric(null)
+          return;
+        }
+
+        // 3.解析歌词
+
+        let lyric = this.parser.parse(lyricList)
+        console.log('set lyric', JSON.stringify(lyric))
+
+        // 4.设置歌词
+        this.lyricController?.setLyric(lyric)
+      } catch (e) {
+        this.lyricController?.updatePosition(0)
+        this.lyricController?.setLyric(null);
       }
 
-      // 3.解析歌词
-      let lyric = this.parser.parse(lyricList)
-      console.log('set lyric', JSON.stringify(lyric))
-
-      // 4.设置歌词
-      this.lyricController?.setLyric(lyric)
     }, 500)
 
   }

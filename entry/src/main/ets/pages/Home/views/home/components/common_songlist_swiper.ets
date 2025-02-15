@@ -35,7 +35,7 @@ export struct CommonSongListSwiper {
       }
     }
 
-    return ids.join(',')
+    return ids
   }
 
   build() {
@@ -141,9 +141,10 @@ export struct CommonSongListSwiper {
             })
             .onClick(() => {
               if (song.resourceId && song.resourceType) {
-                getPlayer()?.start(this.getIds(this.list), 'ids', {
+                getPlayer()?.start(song.resourceId, 'ids', {
                   avQueueName: this.title,
-                  songId: song.resourceId
+                  songId: song.resourceId,
+                  ids: this.getIds(this.list)
                 })
               }
             })

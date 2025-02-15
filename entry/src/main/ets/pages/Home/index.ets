@@ -65,7 +65,7 @@ struct HomePage {
   @Builder
   buildBar() {
     Column() {
-      if (this.currentTabIndex === 0 && this.player?.playingTitle) {
+      if (this.player?.playingTitle) {
         MusicBar().height('48vp').width('100%')
         Column().height('1vp').width('100%').backgroundColor('#08000000')
       }
@@ -102,8 +102,8 @@ struct HomePage {
       .height('78vp')
       .width('100%')
     }
-    .height(this.currentTabIndex === 0 && this.player?.playingTitle ? `127vp` : '78vp')
-    .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
+    .height(this.player?.playingTitle ? `127vp` : '78vp')
+    .backgroundBlurStyle(BlurStyle.COMPONENT_THIN)
   }
 
   @Builder

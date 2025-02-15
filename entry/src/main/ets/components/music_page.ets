@@ -2,12 +2,12 @@ import { AnimatorOptions, AnimatorResult } from '@ohos.animator';
 import { Player } from '../viewmodel/player';
 import { Utils } from '../common/utils';
 import { getPlayer, getGlobal, GlobalContent } from '../viewmodel/global';
-import { LyricBox } from './lyric';
+import { LyricBox } from './lyric_box';
 import { emitter } from '@kit.BasicServicesKit';
 import { ImageKnifeComponent } from '@ohos/imageknife';
 import { SongLevel } from '../common/song_level';
-import { debuglog } from '../utils/log';
 import { SwipeRefresher } from '@kit.ArkUI';
+import { MusicCached } from './music_cached';
 
 enum DisplayMode {
   Cover = 0,
@@ -163,9 +163,16 @@ export struct MusicPage {
       List({ space: '10vp' }) {
         ForEach(this.player?.activeLevels || [], (item: SongLevel) => {
           ListItem() {
-            Text(String(item.label)).fontSize(14).fontWeight(
-              this.player?.level === item.value ?
-              FontWeight.Bold : FontWeight.Normal)
+            Flex({ justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+              Text(String(item.label)).fontSize(14).fontWeight(
+                this.player?.level === item.value ?
+                FontWeight.Bold : FontWeight.Normal)
+              MusicCached({
+                mode: 'text',
+                songId: String(this.player?.songId || '-1'),
+                level: item.value,
+              }).margin({ left: 4 })
+            }
           }
           .width('90%')
           .height('40vp')
@@ -323,12 +330,22 @@ export struct MusicPage {
         Flex({ alignItems: ItemAlign.Center, justifyContent: FlexAlign.SpaceBetween }) {
           Column() {
             // 歌名
-            Text(this.player?.playingTitle)
-              .fontColor('#ffffffff')
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .fontSize(18)
-              .fontWeight(900)
+            Flex({ alignItems: ItemAlign.Center }) {
+              Text(this.player?.playingTitle)
+                .fontColor('#ffffffff')
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .fontSize(18)
+                .fontWeight(900)
+              MusicCached({
+                mode: 'text',
+                songId: String(this.player?.songId || '-1'),
+                color: '#FFFFFF',
+                level: this.player?.level || '-1'
+              })
+                .height(20)
+                .margin({ left: 6 })
+            }
 
             // 歌手
             if (this.player?.playingArtist) {

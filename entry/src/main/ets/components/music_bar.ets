@@ -5,7 +5,6 @@ import { getPlayer } from '../viewmodel/global';
 import { emitter } from '@kit.BasicServicesKit';
 import { Player } from '../viewmodel/player';
 import { ImageKnifeComponent } from '@ohos/imageknife';
-import tinycolor from 'ohos_tinycolor2';
 import { Utils } from '../common/utils';
 
 @ComponentV2

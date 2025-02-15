@@ -10,7 +10,7 @@ import { Utils } from '../../../../../common/utils'
 const ListSpace = 8;
 
 
-export interface CommonPlaylistItem {
+export interface CommonPlaylistResourcesItem {
   coverImg?: string;
   playCount?: string;
   resourceId?: string;
@@ -23,8 +23,8 @@ export interface CommonPlaylistItem {
 }
 
 @ComponentV2
-export struct CommonPlaylist {
-  @Require @Param resources: CommonPlaylistItem[]
+export struct CommonPlaylistItem {
+  @Require @Param resources: CommonPlaylistResourcesItem[]
   @Param title: string = ''
   @Param iconUrl: string = ''
   @Param dslShowTitle: boolean = false
@@ -42,7 +42,7 @@ export struct CommonPlaylist {
 
         ListItem().width(PageSpace - ListSpace) // 占位
 
-        ForEach(this.resources || [], (item: CommonPlaylistItem) => {
+        ForEach(this.resources || [], (item: CommonPlaylistResourcesItem) => {
           ListItem() {
             Column() {
               // 歌单卡片
@@ -108,9 +108,10 @@ export struct CommonPlaylist {
                     }).onClick((e) => {
                     if (item.resourceId && item.resourceType) {
                       if (item.resourceId.indexOf('CITY_STYLE_SONG_CHART') >= 0) {
-                        getPlayer()?.start((item?.playBtn?.playAction?.songIds || [])?.join(',') || '', 'ids', {
+                        getPlayer()?.start(item.resourceId, 'ids', {
                           avQueueName: item?.name?.replace(/\s/ig, ''),
-                          songId: String(item.playBtn?.playAction?.songIds?.[0] || '')
+                          songId: String(item.playBtn?.playAction?.songIds?.[0] || ''),
+                          ids: item?.playBtn?.playAction?.songIds?.map(i => String(i))
                         })
                       } else {
                         getPlayer()?.start(item.resourceId, item.resourceType)
