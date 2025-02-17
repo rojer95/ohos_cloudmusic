@@ -29,8 +29,6 @@
 | <img  src="./preview/p1.jpg" width="200" /> | <img  src="./preview/p2.jpg" width="200" /> | <img  src="./preview/p3.jpg" width="200" /> |
 |                播控组件效果                 |                歌单页-样式 1                |                歌单页-样式 2                |
 | <img  src="./preview/p4.jpg" width="200" /> | <img  src="./preview/p5.jpg" width="200" /> | <img  src="./preview/p6.jpg" width="200" /> |
-|                   登录页                    |                                             |                                             |
-| <img  src="./preview/p7.jpg" width="200" /> |                                             |                                             |
 
 ## 使用包
 
