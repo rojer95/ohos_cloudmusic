@@ -2,6 +2,7 @@ import { media } from '@kit.MediaKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { HttpProxyCacheServer, HttpProxyCacheServerBuilder } from '@ohos/video-cache';
 import { avSession as AVSessionManager } from '@kit.AVSessionKit';
+import { emitter } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
 import { apiCheckMusic } from '../api/music_check';
 import { apiMusicSongDetail } from '../api/music_song_detail';
@@ -22,6 +23,9 @@ import { apiArtistSongs } from '../api/artist_songs';
 import { debuglog } from '../utils/log';
 import { SongLevel, SongLevels } from '../common/song_level';
 import GlobalProxyServer, { CacheUtil, MyCacheListener, MyFileNameGenerator, MyHeaderInject } from './cache';
+import { audio } from '@kit.AudioKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { LoginInfo } from './loginInfo';
 
 export type PlayType = 'fm' | 'similarSong' | 'similarArtist' | 'star' | 'playList' | 'dailySongs' | 'ids'
 
@@ -56,6 +60,8 @@ class Player {
   avPlayer?: media.AVPlayer;
   /** 播控组件 **/
   avSession?: AVSessionManager.AVSession;
+  /** 音频会话管理器 **/
+  audioSessionManager?: audio.AudioSessionManager;
   /** 0: 免费或无版权 1: VIP 歌曲 4: 购买专辑  8: 非会员可免费播放低音质，会员可播放高音质及下载 **/
   fee?: number
   /** 是否试听 **/
@@ -102,10 +108,11 @@ class Player {
   @Trace playingAlbum: string | undefined = undefined;
   @Trace playingMaxLevel: string | undefined = undefined;
   /** 播放音质等级 standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, jymaster => 超清母带 **/
-  @Trace userLevel: string = 'standard';
+  @Trace userPlayLevel: string = 'standard';
   @Trace level: string = '';
   /** 是否处于切换音质 **/
   @Trace isToggleLeveling: boolean = false;
+  // @Trace toggleUrl: string = ''
   /** 切换音质进度临时保持 **/
   toggleLevelPreTime: undefined | number = undefined;
   /** 当前打开的文件，播放缓存歌曲 **/
@@ -132,7 +139,7 @@ class Player {
   /**
    * 初始化
    */
-  async init() {
+  async init(userPlayLevel: string) {
     if (this._inited) {
       return
     }
@@ -145,11 +152,13 @@ class Player {
       .build()
     GlobalProxyServer?.getInstance()?.setServer(server);
     this.avPlayer = await media.createAVPlayer()
+    await this.initAudioSessionManager()
     await this.createAudioSession()
     await this.startContinuousTask()
     this.startListener()
     this._inited = true
-    this.userLevel = AppStorage.get<string>('userPlayLevel') || 'standard'
+    debuglog('user cached Level', userPlayLevel)
+    this.userPlayLevel = userPlayLevel || 'standard'
   }
 
   /**
@@ -159,6 +168,7 @@ class Player {
     this.stopListener()
     await this.avPlayer?.release()
     this.avPlayer = undefined
+    await this.destroyAudioSessionManager()
     await this.destroyAudioSession()
     await this.stopContinuousTask()
     /** 关闭文件 **/
@@ -243,6 +253,33 @@ class Player {
     this.avSession = undefined
   }
 
+  async initAudioSessionManager() {
+    this.audioSessionManager = audio.getAudioManager().getSessionManager();
+    await this.activateAudioSession()
+  }
+
+  async destroyAudioSessionManager() {
+    if (!this.audioSessionManager) {
+      return
+    }
+    await this.audioSessionManager.deactivateAudioSession()
+  }
+
+  async activateAudioSession() {
+    if (!this.audioSessionManager) {
+      return
+    }
+    const isActivated = this.audioSessionManager.isAudioSessionActivated();
+    if (isActivated) {
+      return
+    }
+    let strategy: audio.AudioSessionStrategy = {
+      concurrencyMode: audio.AudioConcurrencyMode.CONCURRENCY_MIX_WITH_OTHERS
+    };
+    await this.audioSessionManager.activateAudioSession(strategy)
+    debuglog('activateAudioSession', 'success')
+  }
+
   /**
    * 开始监听事件
    */
@@ -284,7 +321,9 @@ class Player {
               this.avPlayer?.seek(this.toggleLevelPreTime)
               this.time = this.toggleLevelPreTime
             }
-            this.avPlayer?.play()
+            this.avPlayer!.audioInterruptMode = audio.InterruptMode.INDEPENDENT_MODE
+            this.activateAudioSession()
+            this.avPlayer!.play()
             break;
           case 'playing':
             // debuglog('state', 'playing')
@@ -355,6 +394,18 @@ class Player {
         // AppStorage.setOrCreate('playingTime', this.time)
         this.time = time
       })
+
+      this.avPlayer.on('audioInterrupt', (info: audio.InterruptEvent) => {
+        debuglog('audioInterrupt called,and InterruptEvent info is:', info)
+        if (info.eventType === audio.InterruptType.INTERRUPT_TYPE_END &&
+          info.forceType === audio.InterruptForceType.INTERRUPT_SHARE &&
+          info.hintType === audio.InterruptHint.INTERRUPT_HINT_RESUME) {
+          if (this.playingState === 'paused') {
+            this.avPlayer?.play()
+          }
+        }
+      })
+
     }
 
     if (this.avSession) {
@@ -405,6 +456,7 @@ class Player {
       this.avPlayer.off('error')
       // this.avPlayer.off('durationUpdate')
       this.avPlayer.off('timeUpdate')
+      this.avPlayer.off('audioInterrupt')
     }
 
     if (this.avSession) {
@@ -794,10 +846,10 @@ class Player {
        * 默认按用户选择音质
        * 如果用户选择的音质超过当前音乐可播放最大音质，需要降低音质到最大可播放音质
        */
-      this.level = this.userLevel || 'standard';
+      this.level = this.userPlayLevel || 'standard';
 
 
-      const userSelectLevel = SongLevels.find(l => l.value === this.userLevel);
+      const userSelectLevel = SongLevels.find(l => l.value === this.userPlayLevel);
       const maxCanPlayLevel = SongLevels.find(l => l.value === this.playingMaxLevel);
 
       if (userSelectLevel && maxCanPlayLevel && userSelectLevel?.level > maxCanPlayLevel?.level) {
@@ -899,8 +951,13 @@ class Player {
       return
     }
 
-    this.userLevel = level // 保存用户选择音质
-    AppStorage.setOrCreate('userPlayLevel', level);
+    this.userPlayLevel = level // 保存用户选择音质
+    let eventData: emitter.EventData = {
+      data: {
+        level
+      }
+    }
+    emitter.emit('userPlayLevelChange', eventData)
     this.level = level // 设置当前播放音质
     this.isToggleLeveling = true;
     this.toggleLevelPreTime = this.time

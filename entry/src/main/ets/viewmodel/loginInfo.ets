@@ -26,32 +26,7 @@ export class LoginInfo {
   @Trace deviceId: string = ''
   @Trace cookie: string = ''
   @Trace isLogin: boolean = false
-  @Trace profile?: UserProfile
-  @Trace account?: UserAccount
-
-  async loadLoginStatus() {
-    this.profile = undefined
-    this.account = undefined
-    // debuglog('cookie', this.cookie)
-    const loginStatus = await loginStatusApi()
-    debuglog('loginStatus', loginStatus)
-    if (loginStatus?.body?.account) {
-      this.account = loginStatus?.body?.account;
-      if (loginStatus.body?.account?.anonimousUser) {
-        this.isLogin = false
-      } else {
-        this.isLogin = true;
-        this.profile = loginStatus?.body?.profile
-      }
-
-      getPlayer()?.loadLikeList()
-      emitter.emit('logined')
-    } else {
-      promptAction.showToast({
-        message: '拉取登录信息失败！'
-      })
-    }
-
-    PersistenceV2.save(LoginInfo)
-  }
+  @Trace nickname?: string;
+  @Trace accountId?: number;
+  @Trace userPlayLevel?: string = 'standard'
 }

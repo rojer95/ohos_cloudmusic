@@ -128,7 +128,7 @@ struct PlaylistPage {
 
   @Builder
   buildSubButton(justifyContent?: FlexAlign) {
-    if (this.playlistId && this.detail?.creator?.userId !== this.loginInfo?.account?.id) {
+    if (this.playlistId && this.detail?.creator?.userId !== this.loginInfo?.accountId) {
       Flex({ justifyContent }) {
         Button(`${this.detail?.subscribed ? '取消收藏' : '收藏歌单'}`)
           .backgroundColor('#39ffffff')

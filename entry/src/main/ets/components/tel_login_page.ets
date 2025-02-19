@@ -22,7 +22,7 @@ export struct TelLoginPage {
             clearInterval(this.timer)
             this.timer = undefined
             this.loginInfo.cookie = cookie;
-            await this.loginInfo.loadLoginStatus()
+            emitter.emit('loadLoginStatus')
             promptAction.showToast({
               message: '登录成功'
             })

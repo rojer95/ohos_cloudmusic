@@ -179,7 +179,7 @@ export struct MusicPage {
           .border({
             width: 1, color:
             this.player?.level === item.value ?
-              '#a3000000' : '#12000000'
+            $r('app.color.border_active_color') : $r('app.color.border_color')
           })
           .borderRadius(10)
           .onClick(() => {
@@ -266,42 +266,44 @@ export struct MusicPage {
           Swiper() {
 
             // 音乐碟
-            Stack() {
-              Column() {
-                // 封面图
-                Stack() {
-                  Image($r('app.media.disc'))
-                    .height(280)
-                    .width(280)
-                    .draggable(false)
+            Flex({ justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+              Stack() {
+                Column() {
+                  // 封面图
+                  Stack() {
+                    Image($r('app.media.disc'))
+                      .height(280)
+                      .width(280)
+                      .draggable(false)
 
-                  if (this.player?.playingMediaImage) {
-                    ImageKnifeComponent({
-                      imageKnifeOption: {
-                        loadSrc: Utils.getCoverUrl(this.player?.playingMediaImage, 400, 400)
-                      }
-                    })
-                      .height(280 * 0.6)
-                      .width(280 * 0.6)
-                      .borderRadius(280 * 0.6 / 2)
-                      .clip(true)
-                      .rotate({ angle: this.angle })
+                    if (this.player?.playingMediaImage) {
+                      ImageKnifeComponent({
+                        imageKnifeOption: {
+                          loadSrc: Utils.getCoverUrl(this.player?.playingMediaImage, 400, 400)
+                        }
+                      })
+                        .height(280 * 0.6)
+                        .width(280 * 0.6)
+                        .borderRadius(280 * 0.6 / 2)
+                        .clip(true)
+                        .rotate({ angle: this.angle })
+                    }
                   }
+                  .width('100%')
                 }
-                .width('100%')
+                .margin({ top: 48 })
+
+                // 指针
+                Image($r('app.media.disc_bar'))
+                  .width(200)
+                  .height(200)
+                  .objectFit(ImageFit.Contain)
+                  .rotate({ angle: this.barAngle, centerX: 100, centerY: 100 })
+                  .draggable(false)
+                  .margin({ top: -90 })
               }
-              .margin({ top: 133 })
-
-              // 指针
-              Image($r('app.media.disc_bar'))
-                .width(200)
-                .height(200)
-                .objectFit(ImageFit.Contain)
-                .rotate({ angle: this.barAngle, centerX: 100, centerY: 100 })
-                .draggable(false)
+              .alignContent(Alignment.Top)
             }
-
-            .alignContent(Alignment.Top)
             .height('100%')
 
 
@@ -541,7 +543,7 @@ export struct MusicPage {
     .bindSheet($$this.isShowLevelToggle, this.levelToggleBuilder(), {
       preferType: SheetType.BOTTOM,
       height: '400vp',
-      blurStyle: BlurStyle.COMPONENT_REGULAR,
+      blurStyle: BlurStyle.BACKGROUND_THIN,
       title: { title: '选择音质' },
     })
     .alignContent(Alignment.Top)

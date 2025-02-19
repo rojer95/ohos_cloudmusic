@@ -31,6 +31,14 @@
     {
       "name": "tab_text_color_un_active",
       "value": "#FFE2E2E2"
+    },
+    {
+      "name": "border_color",
+      "value": "#12FFFFFF"
+    },
+    {
+      "name": "border_active_color",
+      "value": "#a3FFFFFF"
     }
   ]
 }

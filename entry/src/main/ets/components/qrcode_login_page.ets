@@ -4,6 +4,7 @@ import { loginQrCheckApi } from "../api/login_qr_check";
 import { debuglog } from "../utils/log";
 import { PersistenceV2, promptAction } from "@kit.ArkUI";
 import { LoginInfo } from "../viewmodel/loginInfo";
+import { emitter } from "@kit.BasicServicesKit";
 
 @ComponentV2
 export struct QrcodeLoginPage {
@@ -61,7 +62,7 @@ export struct QrcodeLoginPage {
     if (res.body?.code === 803) {
       this.tempCookies = []
       this.loginInfo.cookie = res.cookie.join(';')
-      await this.loginInfo.loadLoginStatus()
+      emitter.emit('loadLoginStatus')
       promptAction.showToast({
         message: '登录成功'
       })

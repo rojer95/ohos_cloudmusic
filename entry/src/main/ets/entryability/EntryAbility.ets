@@ -23,7 +23,6 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     debuglog('Ability', 'onWindowStageCreate')
 
-    PersistentStorage.persistProp('userPlayLevel', 'standard');
 
     const global = getGlobal()!
     initPlayer(this.context)

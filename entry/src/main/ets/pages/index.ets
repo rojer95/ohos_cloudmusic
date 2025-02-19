@@ -2,10 +2,11 @@ import { MusicPage } from '../components/music_page';
 import { emitter } from '@kit.BasicServicesKit';
 import { generateConfig } from '../api/core/generateConfig';
 import { getPlayer } from '../viewmodel/global';
-import { PersistenceV2 } from '@kit.ArkUI';
+import { PersistenceV2, promptAction } from '@kit.ArkUI';
 import { LoginInfo } from '../viewmodel/loginInfo';
 import { Player } from '../viewmodel/player';
 import { debuglog } from '../utils/log';
+import { loginStatusApi } from '../api/login_status';
 
 // 接受序列化失败的回调
 PersistenceV2.notifyOnError((key: string, reason: string, msg: string) => {
@@ -29,7 +30,7 @@ struct Index {
       debuglog('LoginInfo', this.loginInfo, 2)
       await generateConfig(this.loginInfo, context.resourceManager)
       if (!this.player.avPlayer) {
-        await this.player?.init()
+        await this.player?.init(this.loginInfo.userPlayLevel || 'standard')
       }
       if (this.loginInfo.isLogin) {
         await this.player.loadLikeList()
@@ -38,20 +39,57 @@ struct Index {
       if (this.pathStack.getParamByName('HomePage').length === 0) {
         this.pathStack.pushPath({ name: 'HomePage' });
       }
+
+      await this.loadLoginStatus()
     } catch (e) {
       debuglog('Index', e.message)
       debuglog('Index', e.stack, 2)
     }
   }
 
-  onMusicPageEvent() {
+  async loadLoginStatus() {
+    this.loginInfo.nickname = undefined
+    this.loginInfo.accountId = undefined
+    // debuglog('cookie', this.cookie)
+    const loginStatus = await loginStatusApi()
+    debuglog('loginStatus', loginStatus)
+    if (loginStatus?.body?.account) {
+      this.loginInfo.accountId = loginStatus?.body?.account.id;
+      if (loginStatus.body?.account?.anonimousUser) {
+        this.loginInfo.isLogin = false
+      } else {
+        this.loginInfo.isLogin = true;
+        this.loginInfo.nickname = loginStatus?.body?.profile?.nickname
+      }
+
+      getPlayer()?.loadLikeList()
+      emitter.emit('logined')
+    } else {
+      promptAction.showToast({
+        message: '拉取登录信息失败！'
+      })
+    }
+  }
+
+  onEvent() {
+
+    emitter.on('loadLoginStatus', () => {
+      this.loadLoginStatus()
+    })
+
     emitter.on('globalModal', data => {
       this.onGlobalModalChange(data?.data?.page as string, data?.data?.show as boolean)
     })
+
+    emitter.on('userPlayLevelChange', data => {
+      this.loginInfo.userPlayLevel = data?.data?.['level'] as string
+    })
   }
 
-  offMusicPageEvent() {
+  offEvent() {
+    emitter.off('loadLoginStatus')
     emitter.off('globalModal')
+    emitter.off('userPlayLevelChange')
   }
 
   onGlobalModalChange(page: string, visible: boolean) {
@@ -64,11 +102,11 @@ struct Index {
 
   aboutToAppear(): void {
     this.onInit()
-    this.onMusicPageEvent()
+    this.onEvent()
   }
 
   aboutToDisappear(): void {
-    this.offMusicPageEvent()
+    this.offEvent()
   }
 
   @Builder
@@ -81,8 +119,6 @@ struct Index {
           )
       )
   }
-
-
 
   build() {
     Navigation(this.pathStack)

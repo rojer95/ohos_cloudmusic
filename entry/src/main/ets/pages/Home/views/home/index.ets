@@ -255,7 +255,7 @@ export struct HomeTabContext {
           title: `${
           ['PAGE_RECOMMEND_RADAR', 'PAGE_RECOMMEND_MY_SHEET'].includes(block.bizCode)
             ?
-            (this.loginInfo?.profile?.nickname ? `${this.loginInfo?.profile?.nickname}的` : '') : ''
+            (this.loginInfo?.nickname ? `${this.loginInfo?.nickname}的` : '') : ''
           }${(block.dslData as PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST.Data)?.blockResource?.title}`,
           dslShowTitle: (block.dslData as PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST.Data)?.dslShowTitle
         })

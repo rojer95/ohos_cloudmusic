@@ -106,8 +106,8 @@ export struct MeTabContent {
   }
 
   async load() {
-    if (this.loginInfo.account?.id) {
-      const res = await userDetailApi(this.loginInfo.account?.id)
+    if (this.loginInfo.accountId) {
+      const res = await userDetailApi(this.loginInfo.accountId)
       if (res) {
         debuglog('user detail', res)
         if (!this.detail) {
@@ -120,7 +120,7 @@ export struct MeTabContent {
   }
 
   loadPlaylist = async () => {
-    if (!this.loginInfo.account?.id) {
+    if (!this.loginInfo.accountId) {
       return;
     }
 
@@ -142,7 +142,7 @@ export struct MeTabContent {
 
     try {
 
-      const playlistRes = await userPlaylistApi(this.loginInfo.account!.id!, loadedCount)
+      const playlistRes = await userPlaylistApi(this.loginInfo.accountId!, loadedCount)
       debuglog('playlist', playlistRes)
 
       for (const playlistItem of playlistRes?.playlist || []) {
@@ -245,7 +245,7 @@ export struct MeTabContent {
             .onClick(async () => {
               if (this.loginInfo.isLogin) {
                 this.loginInfo.cookie = '';
-                await this.loginInfo.loadLoginStatus()
+                emitter.emit('loadLoginStatus')
                 promptAction.showToast({
                   message: '退出登录成功'
                 })
