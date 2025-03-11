@@ -5,6 +5,7 @@ import { debuglog } from '../utils/log';
 import { getGlobal, initPlayer } from '../viewmodel/global';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { emitter } from '@kit.BasicServicesKit';
 
 
 dayjs.extend(duration)
@@ -61,5 +62,20 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
+  }
+
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    debuglog('want', want)
+
+    if (want.parameters?.['ohos.aafwk.param.callerBundleName'] === 'com.ohos.sceneboard'){
+      let eventData: emitter.EventData = {
+        data: {
+          show: true,
+          page: 'music'
+        }
+      }
+      emitter.emit('globalModal', eventData)
+    }
+
   }
 }

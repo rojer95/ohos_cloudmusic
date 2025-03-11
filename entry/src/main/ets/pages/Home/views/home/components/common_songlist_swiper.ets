@@ -1,9 +1,10 @@
-import { PageSpace } from '../../../../../common/vars'
+import { ListSpace, PageSpace } from '../../../../../common/vars'
 import { LengthMetrics } from '@kit.ArkUI'
 import { MusicPlayBtn } from '../../../../../components/music_play_btn';
 import { getPlayer } from '../../../../../viewmodel/global';
 import { ImageKnifeComponent } from '@ohos/imageknife';
 import { Utils } from '../../../../../common/utils'
+import { BreakpointState, BreakpointSystem } from '../../../../../common/breakpointsystem';
 
 export interface CommonSongListSwiperItemSong {
   resourceId?: string;
@@ -23,6 +24,18 @@ export interface CommonSongListSwiperItem {
 export struct CommonSongListSwiper {
   @Require @Param list: CommonSongListSwiperItem[]
   @Require @Param title: string
+  @Local displayCount: BreakpointState<number> = BreakpointState.of({ sm: 1, md: 2, lg: 3 })
+  @Local listSpace: BreakpointState<number> = BreakpointState.of(ListSpace)
+
+  aboutToAppear() {
+    BreakpointSystem.getInstance().attach(this.displayCount)
+    BreakpointSystem.getInstance().attach(this.listSpace)
+  }
+
+  aboutToDisappear() {
+    BreakpointSystem.getInstance().detach(this.displayCount)
+    BreakpointSystem.getInstance().detach(this.listSpace)
+  }
 
   getIds(_list: CommonSongListSwiperItem[]) {
 
@@ -49,8 +62,6 @@ export struct CommonSongListSwiper {
               alignItems: ItemAlign.Center,
               justifyContent: FlexAlign.SpaceBetween
             }) {
-              Column() // 占位
-
               // 左侧封面图
               Column() {
 
@@ -149,12 +160,17 @@ export struct CommonSongListSwiper {
               }
             })
           })
-        }.alignItems(HorizontalAlign.Start)
+        }
+
+        .padding({ left: this.listSpace.value || 8 })
+        .alignItems(HorizontalAlign.Start)
       })
 
     }
+
     .loop(false)
     .nextMargin(32)
+    .displayCount(this.displayCount.value || 1)
     .indicator(false)
 
   }

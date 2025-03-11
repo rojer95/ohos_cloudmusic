@@ -1,10 +1,21 @@
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
+import { BreakpointState, BreakpointSystem } from '../../../../../common/breakpointsystem';
+import { ListSpace } from '../../../../../common/vars';
 
 @ComponentV2
 export struct HelloBar {
   @Param hello: string = '';
   @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
+  @Local listSpace: BreakpointState<number> = BreakpointState.of(ListSpace)
+
+  aboutToAppear() {
+    BreakpointSystem.getInstance().attach(this.listSpace)
+  }
+
+  aboutToDisappear() {
+    BreakpointSystem.getInstance().detach(this.listSpace)
+  }
 
   build() {
     Flex({
@@ -23,8 +34,8 @@ export struct HelloBar {
         })
 
     }.padding({
-      left: 12,
-      right: 12,
+      left: this.listSpace.value || 8,
+      right: this.listSpace.value || 8,
       bottom: 0
     })
   }

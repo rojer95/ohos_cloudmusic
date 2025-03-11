@@ -1,12 +1,12 @@
-import { PageSpace } from '../../../../../common/vars'
+import { ListSpace, PageSpace } from '../../../../../common/vars'
 import { HomeBlockResourceItemExtInfo } from '../../../../../model/home_block';
 import { PlayOptions } from '../../../../../viewmodel/player';
 import { getPlayer } from '../../../../../viewmodel/global';
 import { CommonTitle } from './common_title'
 import { ImageKnifeComponent } from '@ohos/imageknife'
 import { Utils } from '../../../../../common/utils';
+import { BreakpointState, BreakpointSystem } from '../../../../../common/breakpointsystem';
 
-const ListSpace = 8;
 
 export interface CommonShortcutItem {
   coverImg?: string;
@@ -23,6 +23,15 @@ export struct CommonShortcut {
   @Require @Param resources: CommonShortcutItem[]
   @Param title: string = ''
   @Param dslShowTitle: boolean = false
+  @Local listSpace: BreakpointState<number> = BreakpointState.of(ListSpace)
+
+  aboutToAppear() {
+    BreakpointSystem.getInstance().attach(this.listSpace)
+  }
+
+  aboutToDisappear() {
+    BreakpointSystem.getInstance().detach(this.listSpace)
+  }
 
   build() {
     Column() {
@@ -32,10 +41,9 @@ export struct CommonShortcut {
         }
       }
 
-      List({ space: ListSpace }) {
+      List({ space: (this.listSpace.value || 8) }) {
 
-        ListItem().width(PageSpace - ListSpace) // 占位
-
+        ListItem()// 占位
         ForEach(this.resources || [], (item: CommonShortcutItem) => {
           ListItem() {
             Column() {
@@ -114,8 +122,7 @@ export struct CommonShortcut {
             })
           }
         })
-
-        ListItem().width(PageSpace - ListSpace) // 占位
+        ListItem() // 占位
 
       }
       .scrollBar(BarState.Off)

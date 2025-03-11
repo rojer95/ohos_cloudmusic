@@ -189,8 +189,27 @@ class Player {
 
     this.avSession = await AVSessionManager.createAVSession(this.context, 'Player', 'audio')
 
+
     // 激活接口要在元数据、控制命令注册完成之后再执行
     await this.avSession.activate();
+
+    // wantAgentInfo
+
+    let wantAgentInfo: wantAgent.WantAgentInfo = {
+      wants: [
+        {
+          bundleName: 'com.rojer.music',
+          abilityName: 'EntryAbility'
+        }
+      ],
+      // OperationType.START_ABILITIES
+      operationType: 2,
+      requestCode: 0,
+      wantAgentFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG]
+    }
+    const agent = await wantAgent.getWantAgent(wantAgentInfo)
+    this.avSession.setLaunchAbility(agent)
+
     debuglog('Player', `session create done : ` + this.avSession.sessionId)
   }
 
@@ -274,7 +293,7 @@ class Player {
       return
     }
     let strategy: audio.AudioSessionStrategy = {
-      concurrencyMode: audio.AudioConcurrencyMode.CONCURRENCY_MIX_WITH_OTHERS
+      concurrencyMode: audio.AudioConcurrencyMode.CONCURRENCY_DEFAULT
     };
     await this.audioSessionManager.activateAudioSession(strategy)
     debuglog('activateAudioSession', 'success')

@@ -1,13 +1,12 @@
 import { ImageKnifeComponent } from '@ohos/imageknife';
-import { PageSpace } from '../../../../../common/vars'
+import { ListSpace, PageSpace } from '../../../../../common/vars'
 import { MusicPlayBtn } from '../../../../../components/music_play_btn';
 import { CommonPlaylistItemPlayBtn } from '../../../../../model/home_block';
 import { Playlist, TrackId } from '../../../../../model/playlist_detail';
 import { getPlayer } from '../../../../../viewmodel/global';
 import { CommonTitle } from './common_title'
 import { Utils } from '../../../../../common/utils'
-
-const ListSpace = 8;
+import { BreakpointState, BreakpointSystem } from '../../../../../common/breakpointsystem';
 
 
 export interface CommonPlaylistResourcesItem {
@@ -29,6 +28,15 @@ export struct CommonPlaylistItem {
   @Param iconUrl: string = ''
   @Param dslShowTitle: boolean = false
   @Consumer('pathStack') pathStack: NavPathStack = new NavPathStack();
+  @Local listSpace: BreakpointState<number> = BreakpointState.of(ListSpace)
+
+  aboutToAppear() {
+    BreakpointSystem.getInstance().attach(this.listSpace)
+  }
+
+  aboutToDisappear() {
+    BreakpointSystem.getInstance().detach(this.listSpace)
+  }
 
   build() {
     Column() {
@@ -38,9 +46,9 @@ export struct CommonPlaylistItem {
         }
       }
 
-      List({ space: ListSpace }) {
+      List({ space: this.listSpace.value }) {
 
-        ListItem().width(PageSpace - ListSpace) // 占位
+        ListItem() {} // 占位
 
         ForEach(this.resources || [], (item: CommonPlaylistResourcesItem) => {
           ListItem() {
@@ -165,8 +173,7 @@ export struct CommonPlaylistItem {
           }
         })
 
-        ListItem().width(PageSpace - ListSpace) // 占位
-
+        ListItem() {} // 占位
       }
       .width('100%')
       .scrollBar(BarState.Off)

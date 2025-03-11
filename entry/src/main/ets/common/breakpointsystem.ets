@@ -18,6 +18,7 @@ export class BreakpointSystem {
     { name: 'lg', size: 840 }
   ]
   private states: Set<BreakpointState<Object>>
+  private listenerEd: boolean = false
 
   private constructor() {
     this.states = new Set()
@@ -32,6 +33,7 @@ export class BreakpointSystem {
 
   public attach(state: BreakpointState<Object>): void {
     this.states.add(state)
+    this.start()
   }
 
   public detach(state: BreakpointState<Object>): void {
@@ -51,12 +53,18 @@ export class BreakpointSystem {
       if (breakpoint.mediaQueryListener.matches) {
         this.updateAllState(breakpoint.name)
       }
-      breakpoint.mediaQueryListener.on('change', (mediaQueryResult) => {
-        if (mediaQueryResult.matches) {
-          this.updateAllState(breakpoint.name)
-        }
-      })
+
+      if (!this.listenerEd) {
+        breakpoint.mediaQueryListener.on('change', (mediaQueryResult) => {
+          console.log('mediaQueryResult',mediaQueryResult)
+          if (mediaQueryResult.matches) {
+            this.updateAllState(breakpoint.name)
+          }
+        })
+      }
     })
+
+    this.listenerEd = true
   }
 
   private updateAllState(type: BreakpointType): void {
@@ -70,6 +78,7 @@ export class BreakpointSystem {
       }
     })
     this.states.clear()
+    this.listenerEd = false
   }
 }
 

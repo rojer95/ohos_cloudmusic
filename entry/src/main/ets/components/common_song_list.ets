@@ -12,6 +12,7 @@ export struct CommonSongList {
   @Require @Param isNotMore: boolean = false
   @Require @Param loading: boolean = false
   @Param color: string | undefined = undefined
+  @Param withBottomSafeArea: boolean = true
   @Param showCover: boolean = false;
   @Event onMusicClick: (x: SongDetailWithPrivilege) => void = (x: SongDetailWithPrivilege) => {
   }
@@ -86,7 +87,7 @@ export struct CommonSongList {
               .fontColor(this.color)
               .opacity(0.7)
               .padding({ top: 10, bottom: 20 })
-              .margin({ bottom: px2vp(this.global?.bottomRectHeight || 0) * 3 })
+              .margin({ bottom: px2vp(this.global?.bottomRectHeight || 0) * (this.withBottomSafeArea ? 3 : 1) })
           }
         }
       }
