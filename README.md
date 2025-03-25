@@ -40,4 +40,3 @@
 | @ohos/imageknife        | 图片缓存组件  |
 | ohos_tinycolor2         | 色彩解析库    |
 | @ohos/qr-code-generator | 二维码生成库  |
-| @ohos/video-cache       | 音乐缓存组件  |

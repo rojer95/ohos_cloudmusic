@@ -1,6 +1,5 @@
 import { media } from '@kit.MediaKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
-import { HttpProxyCacheServer, HttpProxyCacheServerBuilder } from '@ohos/video-cache';
 import { avSession as AVSessionManager } from '@kit.AVSessionKit';
 import { emitter } from '@kit.BasicServicesKit';
 import { promptAction } from '@kit.ArkUI';
@@ -22,10 +21,9 @@ import { apiSemiArtist } from '../api/simi_artist';
 import { apiArtistSongs } from '../api/artist_songs';
 import { debuglog } from '../utils/log';
 import { SongLevel, SongLevels } from '../common/song_level';
-import GlobalProxyServer, { CacheUtil, MyCacheListener, MyFileNameGenerator, MyHeaderInject } from './cache';
 import { audio } from '@kit.AudioKit';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { LoginInfo } from './loginInfo';
+import { CacheUtil } from './cache';
+import { http } from '@kit.NetworkKit';
 
 export type PlayType = 'fm' | 'similarSong' | 'similarArtist' | 'star' | 'playList' | 'dailySongs' | 'ids'
 
@@ -117,8 +115,12 @@ class Player {
   toggleLevelPreTime: undefined | number = undefined;
   /** 当前打开的文件，播放缓存歌曲 **/
   openedCacheFile: undefined | fs.File = undefined
+  openedCacheCanWrite: boolean = false
+  openedRequest: undefined | http.HttpRequest = undefined
+  waitToDelCache: undefined | string = undefined;
   private _inited: boolean = false
-  cacheListener: MyCacheListener = new MyCacheListener()
+
+  // cacheListener: MyCacheListener = new MyCacheListener()
 
   @Computed
   get levelName(): string {
@@ -143,14 +145,16 @@ class Player {
     if (this._inited) {
       return
     }
-    let server: HttpProxyCacheServer = new HttpProxyCacheServerBuilder(getContext())
-      // Set the cache folder (that is, folder that stores the cached files) to the cache directory of the application sandbox.
-      .cacheDirectory(getContext().cacheDir)
-      .setFileNameGenerator(new MyFileNameGenerator())
-      .maxCacheSize(2048 * 1024 * 1024)
-      .setHeaderInjector(new MyHeaderInject())
-      .build()
-    GlobalProxyServer?.getInstance()?.setServer(server);
+    /**
+     let server: HttpProxyCacheServer = new HttpProxyCacheServerBuilder(getContext())
+     // Set the cache folder (that is, folder that stores the cached files) to the cache directory of the application sandbox.
+     .cacheDirectory(getContext().cacheDir)
+     .setFileNameGenerator(new MyFileNameGenerator())
+     .maxCacheSize(2048 * 1024 * 1024)
+     .setHeaderInjector(new MyHeaderInject())
+     .build()
+     GlobalProxyServer?.getInstance()?.setServer(server);
+     **/
     this.avPlayer = await media.createAVPlayer()
     await this.initAudioSessionManager()
     await this.createAudioSession()
@@ -168,7 +172,7 @@ class Player {
     this.stopListener()
     await this.avPlayer?.release()
     this.avPlayer = undefined
-    await this.destroyAudioSessionManager()
+    // await this.destroyAudioSessionManager()
     await this.destroyAudioSession()
     await this.stopContinuousTask()
     /** 关闭文件 **/
@@ -176,7 +180,13 @@ class Player {
       fs.closeSync(this.openedCacheFile)
     }
 
-    GlobalProxyServer.getInstance().getServer()?.shutdown()
+    if (this.openedRequest) {
+      this.openedRequest.destroy()
+      this.openedRequest = undefined
+    }
+    /**
+     GlobalProxyServer.getInstance().getServer()?.shutdown()
+     **/
   }
 
   /**
@@ -274,30 +284,32 @@ class Player {
 
   async initAudioSessionManager() {
     this.audioSessionManager = audio.getAudioManager().getSessionManager();
-    await this.activateAudioSession()
+    // await this.activateAudioSession()
   }
 
-  async destroyAudioSessionManager() {
-    if (!this.audioSessionManager) {
-      return
-    }
-    await this.audioSessionManager.deactivateAudioSession()
-  }
+  /**
+   async destroyAudioSessionManager() {
+   if (!this.audioSessionManager) {
+   return
+   }
+   await this.audioSessionManager.deactivateAudioSession()
+   }
 
-  async activateAudioSession() {
-    if (!this.audioSessionManager) {
-      return
-    }
-    const isActivated = this.audioSessionManager.isAudioSessionActivated();
-    if (isActivated) {
-      return
-    }
-    let strategy: audio.AudioSessionStrategy = {
-      concurrencyMode: audio.AudioConcurrencyMode.CONCURRENCY_DEFAULT
-    };
-    await this.audioSessionManager.activateAudioSession(strategy)
-    debuglog('activateAudioSession', 'success')
-  }
+   async activateAudioSession() {
+   if (!this.audioSessionManager) {
+   return
+   }
+   const isActivated = this.audioSessionManager.isAudioSessionActivated();
+   if (isActivated) {
+   return
+   }
+   let strategy: audio.AudioSessionStrategy = {
+   concurrencyMode: audio.AudioConcurrencyMode.CONCURRENCY_DEFAULT
+   };
+   await this.audioSessionManager.activateAudioSession(strategy)
+   debuglog('activateAudioSession', 'success')
+   }
+   **/
 
   /**
    * 开始监听事件
@@ -341,7 +353,6 @@ class Player {
               this.time = this.toggleLevelPreTime
             }
             this.avPlayer!.audioInterruptMode = audio.InterruptMode.INDEPENDENT_MODE
-            this.activateAudioSession()
             this.avPlayer!.play()
             break;
           case 'playing':
@@ -805,23 +816,130 @@ class Player {
     }, 200)
   }
 
-  private async getUrlWithCache(songUrl: string) {
-    /** 关闭上一首 **/
+  private openCacheFile(path: string, mode: number) {
+    if (this.openedRequest) {
+      this.openedRequest.destroy()
+      this.openedRequest = undefined
+    }
+
     if (this.openedCacheFile) {
       fs.closeSync(this.openedCacheFile)
       this.openedCacheFile = undefined
     }
 
-    GlobalProxyServer.getInstance().setCurrentFileName(`${this.songId}_${this.level}`)
-    let tempUrl = await GlobalProxyServer?.getInstance()?.getServer()?.getProxyUrl(songUrl)
-    let proxyUrl: string | undefined = tempUrl ? tempUrl : songUrl
-    if (proxyUrl.startsWith(this.context!.cacheDir)) {
-      this.openedCacheFile = fs.openSync(proxyUrl, fs.OpenMode.READ_ONLY);
-      proxyUrl = `fd://${this.openedCacheFile.fd}`;
+    this.openedCacheFile = fs.openSync(path, mode)
+
+  }
+
+  private async getUrlWithCache(songUrl: string) {
+    /** 关闭上一首 **/
+    /**
+     if (this.openedCacheFile) {
+     fs.closeSync(this.openedCacheFile)
+     this.openedCacheFile = undefined
+     }
+
+     GlobalProxyServer.getInstance().setCurrentFileName(`${this.songId}_${this.level}`)
+     let tempUrl = await GlobalProxyServer?.getInstance()?.getServer()?.getProxyUrl(songUrl)
+     let proxyUrl: string | undefined = tempUrl ? tempUrl : songUrl
+     if (proxyUrl.startsWith(this.context!.cacheDir)) {
+     this.openedCacheFile = fs.openSync(proxyUrl, fs.OpenMode.READ_ONLY);
+     proxyUrl = `fd://${this.openedCacheFile.fd}`;
+     }
+
+     debuglog('play url', proxyUrl)
+     return proxyUrl
+     **/
+  }
+
+  private async getSongDataSrc(songUlr: string) {
+    const cacheUrl = `${getContext().cacheDir}/${this.songId}_${this.level}`
+    debuglog('songUlr', songUlr)
+    debuglog('cacheUrl', cacheUrl)
+
+    try {
+      if (this.waitToDelCache) {
+        debuglog('删除缓存', this.waitToDelCache)
+        fs.unlinkSync(this.waitToDelCache)
+        this.waitToDelCache = undefined
+      }
+    } catch (e) {
+      //
     }
 
-    debuglog('play url', proxyUrl)
-    return proxyUrl
+    const exist = fs.accessSync(cacheUrl, fs.AccessModeType.EXIST);
+    if (exist) {
+      const stat = fs.statSync(cacheUrl);
+      this.openCacheFile(cacheUrl, fs.OpenMode.READ_ONLY)
+      this.openedCacheCanWrite = false
+      const aVDataSrcDescriptor: media.AVDataSrcDescriptor = {
+        fileSize: stat.size,
+        callback: (buffer, length, pos) => {
+          // debuglog("aVDataSrcDescriptor", JSON.stringify({ pos, length }));
+          if (this.openedCacheFile) {
+            return fs.readSync(this.openedCacheFile.fd, buffer, {
+              length,
+              offset: pos
+            })
+          }
+          return -1
+        }
+      }
+      return aVDataSrcDescriptor
+    } else {
+      return await new Promise<media.AVDataSrcDescriptor>((resolve, reject) => {
+        let offset = 0
+        this.openCacheFile(`${cacheUrl}.download`, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE)
+        this.openedCacheCanWrite = true
+        this.openedRequest = http.createHttp();
+        this.openedRequest.on("headersReceive", (header: Object) => {
+          debuglog("content-range: " + (header as Record<string, string>)?.['content-range']);
+          debuglog("content-length: " + (header as Record<string, string>)?.['content-length']);
+          const fileSize = Number((header as Record<string, string>)?.['content-length'])
+          const aVDataSrcDescriptor: media.AVDataSrcDescriptor = {
+            fileSize,
+            callback: (buffer, length, pos) => {
+              // debuglog("aVDataSrcDescriptor", JSON.stringify({ pos, length }));
+              if (this.openedCacheFile) {
+                return fs.readSync(this.openedCacheFile.fd, buffer, {
+                  length,
+                  offset: pos
+                })
+              }
+              return -1
+            }
+          }
+          resolve(aVDataSrcDescriptor)
+        });
+
+        this.openedRequest.on("dataReceive", (data: ArrayBuffer) => {
+          // debuglog("dataReceive length: " + JSON.stringify(data.byteLength));
+          if (this.openedCacheFile && this.openedCacheCanWrite) {
+            fs.writeSync(
+              this.openedCacheFile.fd,
+              data,
+              {
+                offset,
+                length: data.byteLength
+              }
+            )
+            offset += data.byteLength
+          }
+        });
+
+        this.openedRequest.on('dataEnd', () => {
+          debuglog("dataEnd");
+          this.openedRequest!.destroy()
+          this.openedRequest = undefined
+          fs.copyFile(`${cacheUrl}.download`, cacheUrl)
+          this.waitToDelCache = `${cacheUrl}.download`
+        })
+
+        this.openedRequest.requestInStream(songUlr, {
+        })
+      })
+
+    }
   }
 
   /**
@@ -954,7 +1072,7 @@ class Player {
       await this.avPlayer.reset();
     }
 
-    this.avPlayer.url = await this.getUrlWithCache(songUrl.url)
+    this.avPlayer.dataSrc = await this.getSongDataSrc(songUrl.url)
   }
 
   /**
@@ -983,7 +1101,7 @@ class Player {
     if (this.avPlayer.state !== 'idle') {
       await this.avPlayer.reset();
     }
-    this.avPlayer.url = await this.getUrlWithCache(songUrl.url);
+    this.avPlayer.dataSrc = await this.getSongDataSrc(songUrl.url)
   }
 
   /**
