@@ -51,11 +51,9 @@ export struct MusicPage {
   private barAni?: AnimatorResult
   private aniIng: boolean = false;
   @Local displayMode: BreakpointState<'1' | '2'> = BreakpointState.of({ sm: '1', md: '1', lg: '2' })
-  @Local discSize: BreakpointState<number> = BreakpointState.of({ sm: 280, md: 280, lg: 200 })
 
   aboutToAppear(): void {
     BreakpointSystem.getInstance().attach(this.displayMode)
-    BreakpointSystem.getInstance().attach(this.discSize)
 
     // console.log('MusicPage aboutToAppear...')
     this.ani = this.getUIContext().createAnimator({
@@ -85,7 +83,6 @@ export struct MusicPage {
 
   aboutToDisappear(): void {
     BreakpointSystem.getInstance().detach(this.displayMode)
-    BreakpointSystem.getInstance().detach(this.discSize)
     console.log('MusicPage aboutToDisappear...')
     this.ani?.cancel()
     this.ani = undefined
@@ -211,42 +208,51 @@ export struct MusicPage {
   buildDisc() {
     // 音乐碟
     Flex({ justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
-      Stack() {
-        Column() {
-          // 封面图
-          Stack() {
-            Image($r('app.media.disc'))
-              .height((this.discSize.value || 280))
-              .width((this.discSize.value || 280))
-              .draggable(false)
+      // 封面图
+      RelativeContainer() {
+        Image($r('app.media.disc'))
+          .height('60%')
+          .aspectRatio(1)
+          .alignRules({
+            'center': { 'anchor': '__container__', 'align': VerticalAlign.Center },
+            'middle': { 'anchor': '__container__', 'align': HorizontalAlign.Center }
+          })
+          .draggable(false)
 
-            if (this.player?.playingMediaImage) {
-              ImageKnifeComponent({
-                imageKnifeOption: {
-                  loadSrc: Utils.getCoverUrl(this.player?.playingMediaImage, 400, 400)
-                }
-              })
-                .height((this.discSize.value || 280) * 0.6)
-                .width((this.discSize.value || 280) * 0.6)
-                .borderRadius((this.discSize.value || 280) * 0.6 / 2)
-                .clip(true)
-                .rotate({ angle: this.angle })
+        if (this.player?.playingMediaImage) {
+          ImageKnifeComponent({
+            imageKnifeOption: {
+              loadSrc: Utils.getCoverUrl(this.player?.playingMediaImage, 400, 400)
             }
-          }
-          .width('100%')
+          })
+            .height('36%')
+            .aspectRatio(1)
+            .borderRadius('50%')
+            .alignRules({
+              'center': { 'anchor': '__container__', 'align': VerticalAlign.Center },
+              'middle': { 'anchor': '__container__', 'align': HorizontalAlign.Center }
+            })
+            .clip(true)
+            .rotate({ angle: this.angle })
         }
-        .margin({ top: 48 })
 
         // 指针
         Image($r('app.media.disc_bar'))
-          .width(200)
-          .height(200)
+          .height('36%')
+          .aspectRatio(1)
           .objectFit(ImageFit.Contain)
-          .rotate({ angle: this.barAngle, centerX: 100, centerY: 100 })
+          .rotate({ angle: this.barAngle, centerX: '50%', centerY: '50%' })
           .draggable(false)
-          .margin({ top: -90 })
+          .alignRules({
+            'top': { 'anchor': '__container__', 'align': VerticalAlign.Top },
+            'middle': { 'anchor': '__container__', 'align': HorizontalAlign.Center }
+          })
+          .offset({
+            y: -10
+          })
       }
-      .alignContent(Alignment.Top)
+      .width('100%')
+      .height('100%')
     }
     .height('100%')
 

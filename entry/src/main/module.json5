@@ -26,7 +26,7 @@
           // 音乐类应用在后台播放音乐
           'audioPlayback'
         ],
-        "orientation": "auto_rotation",
+//        "orientation": "auto_rotation",
         "skills": [
           {
             "entities": [
