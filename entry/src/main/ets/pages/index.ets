@@ -8,6 +8,7 @@ import { Player } from '../viewmodel/player';
 import { debuglog } from '../utils/log';
 import { loginStatusApi } from '../api/login_status';
 import { BreakpointSystem } from '../common/breakpointsystem';
+import { getInvateUrl } from '../api/invate';
 
 // 接受序列化失败的回调
 PersistenceV2.notifyOnError((key: string, reason: string, msg: string) => {

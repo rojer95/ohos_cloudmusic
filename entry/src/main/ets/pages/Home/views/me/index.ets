@@ -11,6 +11,8 @@ import { Player } from "../../../../viewmodel/player";
 import { getGlobal, getPlayer, GlobalContent } from "../../../../viewmodel/global";
 import { CacheUtil } from '../../../../viewmodel/cache';
 import { CommonSongList } from "../../../../components/common_song_list";
+import { getInvateUrl } from "../../../../api/invate";
+import { pasteboard } from "@kit.BasicServicesKit";
 
 @ObservedV2
 class UserDetail {
@@ -156,7 +158,6 @@ export struct MeTabContent {
       this.playlistLoading = false
     }
   }
-
   loadCachedList = () => {
     this.cachedSongIds = CacheUtil.loadSongIds()
     this.isCacheSongNotMore = false;
@@ -330,6 +331,46 @@ export struct MeTabContent {
           this.tabKey = tab.key
         })
       })
+      Column() {
+        Image($r('app.media.icon_setting'))
+          .width(18)
+          .height(18)
+          .draggable(false)
+          .objectFit(ImageFit.Contain)
+          .fillColor($r('app.color.music_bar_progress_color'))
+          .bindMenu([
+            {
+              value: '获取内测链接',
+              action: async () => {
+                const url = await getInvateUrl()
+                if (url) {
+                  const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, url);
+                  let systemPasteboard = pasteboard.getSystemPasteboard();
+                  await systemPasteboard.setData(pasteData);
+                  promptAction.showDialog({
+                    title: '复制成功',
+                    message: '内测链接已复制到您的剪切板，内测邀请名额数量有限先到先得。',
+                    buttons: [{
+                      text: '我知道了',
+                      color: $r('app.color.normal_text_color')
+                    },]
+                  })
+                } else {
+                  promptAction.showDialog({
+                    title: '友情提示',
+                    message: '暂无内测邀请链接',
+                    buttons: [{
+                      text: '我知道了',
+                      color: $r('app.color.normal_text_color')
+                    },]
+                  })
+                }
+              }
+            }
+          ])
+      }
+      .alignItems(HorizontalAlign.End)
+      .flexGrow(1)
     }
     .width('100%')
     .padding(16)
@@ -489,5 +530,6 @@ export struct MeTabContent {
       }
     })
     .height('100%')
+
   }
 }
