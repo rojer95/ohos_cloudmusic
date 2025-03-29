@@ -4,7 +4,8 @@ import { createRequest } from './core/request';
 
 interface SongUrl {
   url: string;
-  time?: number
+  time?: number;
+  size: number
 }
 
 

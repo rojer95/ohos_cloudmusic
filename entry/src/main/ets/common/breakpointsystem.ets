@@ -105,7 +105,7 @@ export class BreakpointState<T extends Object> {
   }
 
   public update(type: BreakpointType): void {
-    debuglog('type', type)
+    // debuglog('type', type)
     if (type === 'xs') {
       this.value = this.options.xs
     } else if (type === 'sm') {
