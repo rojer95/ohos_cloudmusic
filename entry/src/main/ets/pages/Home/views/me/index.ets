@@ -14,6 +14,8 @@ import { CommonSongList } from "../../../../components/common_song_list";
 import { getInvateUrl } from "../../../../api/invate";
 import { pasteboard } from "@kit.BasicServicesKit";
 
+const INTERVAL = 30;
+
 @ObservedV2
 class UserDetail {
   @Trace nickname?: string
@@ -43,14 +45,15 @@ class UserDetail {
 }
 
 interface TabItem {
-  key: 'playlist' | 'cached';
+  key: 'myPlaylist' | 'collectPlaylist' | 'cached';
   name: string;
 }
 
 @ComponentV2
 export struct MeTabContent {
   tabs: Array<TabItem> = [
-    { key: 'playlist', name: '我的歌单' },
+    { key: 'myPlaylist', name: '创建的歌单' },
+    { key: 'collectPlaylist', name: '收藏的歌单' },
     { key: 'cached', name: '缓存歌曲' },
   ]
   @Local loginInfo: LoginInfo = PersistenceV2.connect(LoginInfo)!
@@ -62,8 +65,9 @@ export struct MeTabContent {
   @Local isPlaylistNotMore: boolean = false
   @Local isCacheSongNotMore: boolean = false
   @Local cacheSongLoading: boolean = false
-  @Local tabKey: 'playlist' | 'cached' = 'playlist'
+  @Local tabKey: 'myPlaylist' | 'collectPlaylist' | 'cached' | 'cached' = 'myPlaylist'
   @Local cachedSongIds: Array<string> = [];
+  @Local invateUrl: string = '';
   private playlist: PlaylistDataSource = new PlaylistDataSource();
   private scroller: Scroller = new Scroller()
   private cacheDatasource = new TrackDataSource()
@@ -71,9 +75,14 @@ export struct MeTabContent {
   @Monitor('tabKey')
   onTabKeyChange() {
 
-    if (this.tabKey === 'playlist') {
-      this.loadPlaylist()
+    if (this.tabKey === 'myPlaylist') {
+      this.loadPlaylist(true)
     }
+
+    if (this.tabKey === 'collectPlaylist') {
+      this.loadPlaylist(false)
+    }
+
 
     if (this.tabKey === 'cached') {
       this.loadCachedList()
@@ -82,11 +91,16 @@ export struct MeTabContent {
 
   aboutToAppear(): void {
     this.load()
+    this.loadInvateUrl()
     this.onEventListing()
   }
 
   aboutToDisappear(): void {
     this.offEventListing()
+  }
+
+  loadInvateUrl = async () => {
+    this.invateUrl = await getInvateUrl()
   }
 
   onEventListing() {
@@ -117,20 +131,20 @@ export struct MeTabContent {
         }
         this.detail.fill(res);
       }
-      this.loadPlaylist()
+      this.loadPlaylist(this.tabKey === 'myPlaylist')
     }
   }
 
-  loadPlaylist = async () => {
+  loadPlaylist = async (creator: boolean) => {
     if (!this.loginInfo.accountId) {
       return;
     }
 
     this.isPlaylistNotMore = false
     this.playlist.clean()
-    this.loadMorePlaylist();
+    this.loadMorePlaylist(creator);
   }
-  loadMorePlaylist = async () => {
+  loadMorePlaylist = async (creator: boolean) => {
     const loadedCount = this.playlist.totalCount();
     if (this.isPlaylistNotMore) {
       return
@@ -148,9 +162,20 @@ export struct MeTabContent {
       debuglog('playlist', playlistRes)
 
       for (const playlistItem of playlistRes?.playlist || []) {
-        this.playlist.pushData(playlistItem)
+        debuglog('item', JSON.stringify(({
+          creator,
+          userId: playlistItem.creator?.userId,
+          accountId: this.loginInfo.accountId
+        })))
+        if (creator && playlistItem.creator?.userId === this.loginInfo.accountId) {
+          this.playlist.pushData(playlistItem)
+        }
 
+        if (!creator && playlistItem.creator?.userId !== this.loginInfo.accountId) {
+          this.playlist.pushData(playlistItem)
+        }
       }
+
       this.isPlaylistNotMore = !playlistRes?.more
 
       // debuglog('this.isNotMore', this.isNotMore)
@@ -331,46 +356,39 @@ export struct MeTabContent {
           this.tabKey = tab.key
         })
       })
-      Column() {
-        Image($r('app.media.icon_setting'))
-          .width(18)
-          .height(18)
-          .draggable(false)
-          .objectFit(ImageFit.Contain)
-          .fillColor($r('app.color.music_bar_progress_color'))
-          .bindMenu([
-            {
-              value: '获取内测链接',
-              action: async () => {
-                const url = await getInvateUrl()
-                if (url) {
-                  const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, url);
-                  let systemPasteboard = pasteboard.getSystemPasteboard();
-                  await systemPasteboard.setData(pasteData);
-                  promptAction.showDialog({
-                    title: '复制成功',
-                    message: '内测链接已复制到您的剪切板，内测邀请名额数量有限先到先得。',
-                    buttons: [{
-                      text: '我知道了',
-                      color: $r('app.color.normal_text_color')
-                    },]
-                  })
-                } else {
-                  promptAction.showDialog({
-                    title: '友情提示',
-                    message: '暂无内测邀请链接',
-                    buttons: [{
-                      text: '我知道了',
-                      color: $r('app.color.normal_text_color')
-                    },]
-                  })
-                }
-              }
-            }
-          ])
+      if (this.invateUrl) {
+        Column() {
+          Text('邀请好友')
+            .fontSize(10)
+            .padding({
+              top: 2,
+              bottom: 2,
+              left: 4,
+              right: 4
+            })
+            .align(Alignment.Center)
+            .textAlign(TextAlign.Center)
+            .border({ width: 1, color: $r('app.color.primary') })
+            .fontColor($r('app.color.primary'))
+            .borderRadius(14)
+            .margin({ left: 12 })
+            .onClick(async () => {
+              const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, this.invateUrl);
+              let systemPasteboard = pasteboard.getSystemPasteboard();
+              await systemPasteboard.setData(pasteData);
+              promptAction.showDialog({
+                title: '复制成功',
+                message: '内测链接已复制到您的剪切板，您可以将链接分享给Next用户好友。内测邀请名额数量有限先到先得。',
+                buttons: [{
+                  text: '我知道了',
+                  color: $r('app.color.normal_text_color')
+                },]
+              })
+            })
+        }
+        .alignItems(HorizontalAlign.End)
+        .flexGrow(1)
       }
-      .alignItems(HorizontalAlign.End)
-      .flexGrow(1)
     }
     .width('100%')
     .padding(16)
@@ -382,7 +400,7 @@ export struct MeTabContent {
    * @param item
    */
   @Builder
-  buildPlaylistItem(item: PlaylistItem) {
+  buildPlaylistItem(item: PlaylistItem, index: number) {
     Flex({ alignItems: ItemAlign.Center }) {
       // 歌单封面
       ImageKnifeComponent({
@@ -417,6 +435,14 @@ export struct MeTabContent {
       .flexGrow(1)
       .margin({ left: 8 })
     }
+    .animation({
+      duration: 500
+    }) // 显示动画
+    .transition(
+      index < 20 ? TransitionEffect.OPACITY
+        .combine(TransitionEffect.move(TransitionEdge.END)
+          .animation({ curve: Curve.Ease, delay: INTERVAL * index })) : undefined
+    )
     .padding({
       top: 4,
       bottom: 4,
@@ -468,9 +494,9 @@ export struct MeTabContent {
   buildPlaylist() {
     Column() {
       List({ space: 6 }) {
-        LazyForEach(this.playlist, (item: PlaylistItem) => {
+        LazyForEach(this.playlist, (item: PlaylistItem, index: number) => {
           ListItem() {
-            this.buildPlaylistItem(item)
+            this.buildPlaylistItem(item, index)
           }
         }, (i: PlaylistItem) => `${i.id}`)
         this.buildLoadMore()
@@ -506,11 +532,10 @@ export struct MeTabContent {
       Column() {
         this.buildHeader()
         this.buildTabs()
-        if (this.tabKey === 'playlist') {
-          this.buildPlaylist()
-        }
         if (this.tabKey === 'cached') {
           this.buildCachedList()
+        } else {
+          this.buildPlaylist()
         }
       }.margin({
         bottom: this.player?.playingTitle ? 50 : 10
@@ -520,12 +545,13 @@ export struct MeTabContent {
     .scrollBar(BarState.Off)
     .onScrollEdge((side) => {
       if (side === Edge.Bottom) {
-        if (this.tabKey === 'playlist') {
-          this.loadMorePlaylist()
-        }
+
 
         if (this.tabKey === 'cached') {
           this.loadMoreCache()
+        } else {
+          this.loadMorePlaylist(this.tabKey === 'myPlaylist')
+
         }
       }
     })

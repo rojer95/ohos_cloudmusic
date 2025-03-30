@@ -5,6 +5,7 @@ import { SongItem } from "../components/song_item";
 import { SwipeRefresher } from "@kit.ArkUI";
 import { debuglog } from "../utils/log";
 
+const INTERVAL = 30;
 
 @ComponentV2
 export struct CommonSongList {
@@ -49,6 +50,14 @@ export struct CommonSongList {
               showCover: this.showCover,
               color: this.color
             })
+              .animation({
+                duration: 500
+              })// 显示动画
+              .transition(
+                index < 20 ? TransitionEffect.OPACITY
+                  .combine(TransitionEffect.move(TransitionEdge.END)
+                    .animation({ curve: Curve.Ease, delay: INTERVAL * index })) : undefined
+              )
               .onClick(() => {
                 // st < 0 没有版权，设置灰色
                 if ((item?.privilege?.st || 0) < 0) {

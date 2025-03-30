@@ -352,7 +352,7 @@ class Player {
               this.avPlayer?.seek(this.toggleLevelPreTime)
               this.time = this.toggleLevelPreTime
             }
-            this.avPlayer!.audioInterruptMode = audio.InterruptMode.INDEPENDENT_MODE
+            // this.avPlayer!.audioInterruptMode = audio.InterruptMode.INDEPENDENT_MODE
             this.avPlayer!.play()
             break;
           case 'playing':

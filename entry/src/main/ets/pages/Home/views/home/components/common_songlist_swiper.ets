@@ -1,5 +1,5 @@
 import { ListSpace, PageSpace } from '../../../../../common/vars'
-import { LengthMetrics } from '@kit.ArkUI'
+import { curves, LengthMetrics } from '@kit.ArkUI'
 import { MusicPlayBtn } from '../../../../../components/music_play_btn';
 import { getPlayer } from '../../../../../viewmodel/global';
 import { ImageKnifeComponent } from '@ohos/imageknife';
@@ -147,6 +147,33 @@ export struct CommonSongListSwiper {
               Column() // 占位
 
             }
+
+            // 按下动画
+            .stateStyles({
+              normal: {
+                .opacity(1)
+                .scale({
+                  x: 1,
+                  y: 1,
+                })
+              },
+              pressed: {
+                .opacity(0.8)
+                .scale({
+                  x: 0.95,
+                  y: 0.95,
+                })
+              }
+            })
+            .animation({
+              duration: 500
+            })
+            // 显示动画
+            .transition(
+              TransitionEffect.OPACITY
+                .combine(TransitionEffect.scale({ x: 0.6, y: 0.6 }).animation({ curve: Curve.Ease }))
+            )
+
             .margin({
               bottom: PageSpace
             })

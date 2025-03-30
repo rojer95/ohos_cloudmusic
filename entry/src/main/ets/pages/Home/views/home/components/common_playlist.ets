@@ -143,6 +143,32 @@ export struct CommonPlaylistItem {
                 .fontSize(12)
             }
 
+            // 按下动画
+            .stateStyles({
+              normal: {
+                .opacity(1)
+                .scale({
+                  x: 1,
+                  y: 1,
+                })
+              },
+              pressed: {
+                .opacity(0.8)
+                .scale({
+                  x: 0.95,
+                  y: 0.95,
+                })
+              }
+            })
+            .animation({
+              duration: 500
+            })
+            // 显示动画
+            .transition(
+              TransitionEffect.OPACITY
+                .combine(TransitionEffect.scale({ x: 0.6, y: 0.6 }).animation({ curve: Curve.Ease }))
+            )
+
             .onClick(() => {
               if (item.resourceId) {
                 if (item.resourceId.indexOf('CITY_STYLE_SONG_CHART') >= 0) {

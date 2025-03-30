@@ -110,6 +110,10 @@ export struct HomeTabContext {
       this._loadLook = false
       this.loading = false
     }
+
+    if (this._hasMore) {
+      this.load()
+    }
   }
 
   @Builder
@@ -496,16 +500,14 @@ export struct HomeTabContext {
             })
           }
         }.margin({
-          bottom: this.player?.playingTitle ? 50 : 10
+          bottom: this.player?.playingTitle ? 100 : 40
         })
       }
       .width('100%')
       .height('100%')
       .scrollBar(BarState.Off)
       .contentEndOffset(30)
-      .onReachEnd(() => {
-        this.load()
-      })
+
     }
   }
 }

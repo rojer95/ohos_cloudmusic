@@ -22,7 +22,9 @@ export struct HelloBar {
       justifyContent: FlexAlign.SpaceBetween,
       alignItems: ItemAlign.Center
     }) {
-      Text(this.hello).fontSize(22).fontWeight(600)
+      Row() {
+        Text(this.hello).fontSize(22).fontWeight(600)
+      }
 
       Image($r('sys.media.ohos_ic_public_search_filled'))
         .draggable(false)

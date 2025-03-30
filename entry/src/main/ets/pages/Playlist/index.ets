@@ -384,6 +384,7 @@ struct PlaylistPage {
               Column() {
                 if (this.displayMode.value === '1') {
                   this.buildHeader()
+                  Column().height(px2vp(30))
                 } else {
                   // 大屏模式占位高度
                   Column().height(px2vp(this.global?.topRectHeight || 0))
