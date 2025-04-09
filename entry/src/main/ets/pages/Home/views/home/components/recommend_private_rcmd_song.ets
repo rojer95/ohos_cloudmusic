@@ -10,34 +10,37 @@ export struct RecommendRedSimilarSong {
   @Param dslShowTitle: boolean = false
 
   build() {
-    Column() {
+    if (this?.resources?.items && this?.resources?.items?.length > 0) {
 
-      if (this.dslShowTitle && this.title) {
-        CommonTitle({ title: this.title })
-      }
+      Column() {
 
-      CommonSongListSwiper(
-        {
-          title: this.title,
-          list: this.resources.items
-          ?.map((list: PAGE_RECOMMEND_RED_SIMILAR_SONG.HomeCommonRcmdSongContentItem) => {
-            const item: CommonSongListSwiperItem = {
-              songs: list.items?.map((item: PAGE_RECOMMEND_RED_SIMILAR_SONG.HomeCommonRcmdSongContentItemItem) => {
-                const song: CommonSongListSwiperItemSong = {
-                  resourceId: item.resourceId,
-                  resourceType: item.resourceType,
-                  cover: item.coverUrl,
-                  title: item.title,
-                  tag: item.tag,
-                  artistName: item.artistName
-                }
-                return song
-              }) || []
-            }
-            return item
-          })
+        if (this.dslShowTitle && this.title) {
+          CommonTitle({ title: this.title })
         }
-      )
-    }.width('100%')
+
+        CommonSongListSwiper(
+          {
+            title: this.title,
+            list: this?.resources?.items
+            ?.map?.((list: PAGE_RECOMMEND_RED_SIMILAR_SONG.HomeCommonRcmdSongContentItem) => {
+              const item: CommonSongListSwiperItem = {
+                songs: list?.items?.map?.((item: PAGE_RECOMMEND_RED_SIMILAR_SONG.HomeCommonRcmdSongContentItemItem) => {
+                  const song: CommonSongListSwiperItemSong = {
+                    resourceId: item.resourceId,
+                    resourceType: item.resourceType,
+                    cover: item.coverUrl,
+                    title: item.title,
+                    tag: item.tag,
+                    artistName: item.artistName
+                  }
+                  return song
+                }) || []
+              }
+              return item
+            }) || []
+          }
+        )
+      }.width('100%')
+    }
   }
 }

@@ -51,7 +51,7 @@ export struct HomeTabContext {
 
   onEventListing() {
     emitter.on('refresh', (data) => {
-      if (data.data?.['index'] === 0){
+      if (data.data?.['index'] === 0) {
         this.load(true)
       }
     })
@@ -119,6 +119,13 @@ export struct HomeTabContext {
   @Builder
   blockRender(block: HomeBlockItem) {
 
+    /**
+    ListItem() {
+      Column() {
+        Text(block.bizCode)
+      }
+    }
+     **/
 
     /** 欢迎 **/
     if (block.bizCode === 'PAGE_RECOMMEND_GREETING') {
@@ -163,7 +170,7 @@ export struct HomeTabContext {
     else if (block.bizCode === 'PAGE_RECOMMEND_NEW_SONG_AND_ALBUM') {
       ListItem() {
         HomeDailyRecommend({
-          resources: ((block.dslData as PAGE_RECOMMEND_DAILY_RECOMMEND.Data)?.blockResource?.resources ||
+          resources: ((block.dslData as PAGE_RECOMMEND_DAILY_RECOMMEND.Data)?.home_page_common_playlist_module_d1r94fwj80?.blockResource?.resources ||
             []).map(item => {
             const homeDailyRecommendCardObject: HomeDailyRecommendCardObject = {
               subTitle: item.title,
@@ -175,7 +182,7 @@ export struct HomeTabContext {
             }
             return homeDailyRecommendCardObject
           }),
-          title: (block.dslData as PAGE_RECOMMEND_DAILY_RECOMMEND.Data)?.blockResource?.title,
+          title: (block.dslData as PAGE_RECOMMEND_DAILY_RECOMMEND.Data)?.home_page_common_playlist_module_d1r94fwj80?.blockResource?.title,
           dslShowTitle: (block.dslData as PAGE_RECOMMEND_DAILY_RECOMMEND.Data)?.dslShowTitle
         })
       }
@@ -365,29 +372,54 @@ export struct HomeTabContext {
     /** 场景歌单 **/
     else if (block.bizCode === 'PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION') {
       ListItem() {
-        CommonPlaylistItem({
-          resources: ((block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_common_playlist_module_85enrjqhk4?.blockResource?.resources ||
-            []).map(item => {
-            const commonPlaylistItem: CommonPlaylistResourcesItem = {
-              coverImg: item.coverImg,
-              playCount: item.resourceInteractInfo?.playCount,
-              resourceId: item.resourceId,
-              resourceType: item.resourceType,
-              title: item.title || item.subTitle,
-              coverTitle: item.rankTitle
-            }
-            return commonPlaylistItem
-          }),
-          title: (block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_common_playlist_module_85enrjqhk4?.blockResource?.title,
-          dslShowTitle: (block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.dslShowTitle
-        })
+        Column() {
+
+          if ((block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_common_playlist_module_85enrjqhk4) {
+            CommonPlaylistItem({
+              resources: ((block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_common_playlist_module_85enrjqhk4?.blockResource?.resources ||
+                []).map(item => {
+                const commonPlaylistItem: CommonPlaylistResourcesItem = {
+                  coverImg: item.coverImg,
+                  playCount: item.resourceInteractInfo?.playCount,
+                  resourceId: item.resourceId,
+                  resourceType: item.resourceType,
+                  title: item.title || item.subTitle,
+                  coverTitle: item.rankTitle
+                }
+                return commonPlaylistItem
+              }),
+              title: (block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_common_playlist_module_85enrjqhk4?.blockResource?.title,
+              dslShowTitle: (block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.dslShowTitle
+            })
+          }
+
+          if ((block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_scene_playlist_module_w5rp24j0x2) {
+            CommonPlaylistItem({
+              resources: ((block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_scene_playlist_module_w5rp24j0x2?.blockResource?.resources ||
+                []).map(item => {
+                const commonPlaylistItem: CommonPlaylistResourcesItem = {
+                  coverImg: item.coverImg,
+                  playCount: item.resourceInteractInfo?.playCount,
+                  resourceId: item.resourceId,
+                  resourceType: item.resourceType,
+                  title: item.title || item.subTitle,
+                  coverTitle: item.rankTitle
+                }
+                return commonPlaylistItem
+              }),
+              title: (block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.home_page_scene_playlist_module_w5rp24j0x2?.blockResource?.title,
+              dslShowTitle: (block.dslData as PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION.Data)?.dslShowTitle
+            })
+          }
+        }
       }
 
     } else if (block.bizCode === 'PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION') {
       ListItem() {
         CommonPlaylistItem({
-          resources: ((block.dslData as PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION.Data)?.home_page_common_playlist_module_65o1euutmu?.blockResource?.resources ||
+          resources: ((block.dslData as PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION.Data)?.home_page_scene_playlist_module_rsoa9pd6fn?.blockResource?.resources ||
             []).map(item => {
+            debuglog('PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION', item, 2)
             const commonPlaylistItem: CommonPlaylistResourcesItem = {
               coverImg: item.coverImg,
               playCount: item.resourceInteractInfo?.playCount,
@@ -398,7 +430,7 @@ export struct HomeTabContext {
             }
             return commonPlaylistItem
           }),
-          title: (block.dslData as PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION.Data)?.home_page_common_playlist_module_65o1euutmu?.blockResource?.title,
+          title: (block.dslData as PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION.Data)?.home_page_scene_playlist_module_rsoa9pd6fn?.blockResource?.title,
           dslShowTitle: (block.dslData as PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION.Data)?.dslShowTitle
         })
       }

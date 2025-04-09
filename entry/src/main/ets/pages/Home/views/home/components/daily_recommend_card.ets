@@ -218,27 +218,29 @@ export struct HomeDailyRecommendCard {
           .height(20)
       }
 
-      // 底部标题-单行
-      Flex({ alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
-        Text(this.singleLineTitle ? this.singleLineTitle : this.title)
-          .width('100%')
-          .fontColor('#ffffffff')
-          .fontSize(10)
-          .maxLines(this.singleLineTitle ? 1 : 2)
-          .padding({ left: 10, right: 10 })
-          .fontWeight(700)
-          .textAlign(this.singleLineTitle ? TextAlign.Center : TextAlign.Start)
-      }
-      .height(SUB_TITLE_SIZE)
-      .width('100%')
-      .linearGradient(
-        {
-          colors: this.titleColor
-        }
-      )
-      .backgroundColor(this.titleBg ? '#00000000' : Color.Transparent)
-      .margin({ top: SIZE })
+      if (this.singleLineTitle || this.title) {
 
+        // 底部标题-单行
+        Flex({ alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
+          Text(this.singleLineTitle ? this.singleLineTitle : this.title)
+            .width('100%')
+            .fontColor('#ffffffff')
+            .fontSize(10)
+            .maxLines(this.singleLineTitle ? 1 : 2)
+            .padding({ left: 10, right: 10 })
+            .fontWeight(700)
+            .textAlign(this.singleLineTitle ? TextAlign.Center : TextAlign.Start)
+        }
+        .height(SUB_TITLE_SIZE)
+        .width('100%')
+        .linearGradient(
+          {
+            colors: this.titleColor
+          }
+        )
+        .backgroundColor(this.titleBg ? '#00000000' : Color.Transparent)
+        .margin({ top: SIZE })
+      }
     }
     .height(SIZE + SUB_TITLE_SIZE)
     .width(SIZE)

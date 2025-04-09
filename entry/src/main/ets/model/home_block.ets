@@ -1,4 +1,3 @@
-
 import { Artist } from './artist'
 
 export abstract class DslData {
@@ -103,8 +102,20 @@ export namespace PAGE_RECOMMEND_RED_SIMILAR_SONG {
  * 每日推荐
  */
 export namespace PAGE_RECOMMEND_DAILY_RECOMMEND {
+
+  export class BlockResource {
+    title?: string;
+    iconUrl?: string;
+    resources?: HomeBlockResourceItem[]
+  }
+
+  export class Home_page_common_playlist_module_d1r94fwj80 {
+    blockResource?: BlockResource
+  }
+
   export class Data extends DslData {
-    blockResource?: HomeBlockResource
+    home_page_common_playlist_module_d1r94fwj80?: Home_page_common_playlist_module_d1r94fwj80
+    blockResource?: BlockResource
   }
 }
 
@@ -167,8 +178,13 @@ export namespace PAGE_RECOMMEND_SCENE_PLAYLIST_LOCATION {
     blockResource?: BlockResource
   }
 
+  export class Home_page_scene_playlist_module_w5rp24j0x2 {
+    blockResource?: BlockResource
+  }
+
   export class Data extends DslData {
     home_page_common_playlist_module_85enrjqhk4?: Home_page_common_playlist_module_85enrjqhk4
+    home_page_scene_playlist_module_w5rp24j0x2?: Home_page_scene_playlist_module_w5rp24j0x2
   }
 }
 
@@ -218,7 +234,7 @@ export namespace PAGE_RECOMMEND_SPECIAL_ORIGIN_SONG_LOCATION {
   }
 
   export class Data extends DslData {
-    home_page_common_playlist_module_65o1euutmu?: Home_page_common_playlist_module_65o1euutmu
+    home_page_scene_playlist_module_rsoa9pd6fn?: Home_page_common_playlist_module_65o1euutmu
   }
 }
 
@@ -302,7 +318,6 @@ export class HomeBlockItem {
   bizCode: string = '';
   showTitle: boolean = false;
   positionCode: string = '';
-
   dslData?: PAGE_RECOMMEND_DAILY_RECOMMEND.Data |
   PAGE_RECOMMEND_SPECIAL_CLOUD_VILLAGE_PLAYLIST.Data |
   PAGE_RECOMMEND_SHORTCUT.Data |

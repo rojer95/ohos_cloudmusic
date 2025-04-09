@@ -4,8 +4,8 @@ import { TrackDataSource } from "../model/datasource";
 import { SongItem } from "../components/song_item";
 import { SwipeRefresher } from "@kit.ArkUI";
 import { debuglog } from "../utils/log";
+import { INTERVAL } from "../common/vars";
 
-const INTERVAL = 30;
 
 @ComponentV2
 export struct CommonSongList {
