@@ -1,14 +1,13 @@
 import { MusicPage } from '../components/music_page';
 import { emitter } from '@kit.BasicServicesKit';
 import { generateConfig } from '../api/core/generateConfig';
-import { getPlayer } from '../viewmodel/global';
 import { PersistenceV2, promptAction } from '@kit.ArkUI';
 import { LoginInfo } from '../viewmodel/loginInfo';
 import { Player } from '../viewmodel/player';
 import { debuglog } from '../utils/log';
 import { loginStatusApi } from '../api/login_status';
 import { BreakpointSystem } from '../common/breakpointsystem';
-import { getInvateUrl } from '../api/invate';
+import { getPlayer } from '../viewmodel/global';
 
 // 接受序列化失败的回调
 PersistenceV2.notifyOnError((key: string, reason: string, msg: string) => {
@@ -24,7 +23,7 @@ struct Index {
     ['login', false]
   ])
   @Local loginInfo: LoginInfo = PersistenceV2.connect(LoginInfo, () => new LoginInfo())!
-  @Local player: Player = getPlayer()!
+  @Local player: Player = getPlayer()
 
   async onInit() {
     try {
@@ -64,7 +63,7 @@ struct Index {
         this.loginInfo.nickname = loginStatus?.body?.profile?.nickname
       }
 
-      getPlayer()?.loadLikeList()
+      this.player.loadLikeList()
       emitter.emit('logined')
     } else {
       promptAction.showToast({

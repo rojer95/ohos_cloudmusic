@@ -1,9 +1,3 @@
-import { getPlayer } from "./global"
-import emitter from '@ohos.events.emitter';
-import { loginStatusApi } from "../api/login_status";
-import { debuglog } from "../utils/log";
-import { PersistenceV2, promptAction } from "@kit.ArkUI";
-
 export interface UserAccount {
   id?: number
   anonimousUser?: boolean;

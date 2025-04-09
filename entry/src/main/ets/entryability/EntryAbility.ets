@@ -2,7 +2,7 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { debuglog } from '../utils/log';
-import { getGlobal, initPlayer } from '../viewmodel/global';
+import { getGlobal } from '../viewmodel/global';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { emitter } from '@kit.BasicServicesKit';
@@ -26,7 +26,6 @@ export default class EntryAbility extends UIAbility {
 
 
     const global = getGlobal()!
-    initPlayer(this.context)
 
     windowStage.loadContent('pages/index', async (err) => {
       if (err.code) {

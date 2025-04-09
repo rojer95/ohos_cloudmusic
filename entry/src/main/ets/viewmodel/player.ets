@@ -49,7 +49,7 @@ export const UnLimitLoopNextMap: Record<number, number> = {
 @ObservedV2
 class Player {
   /** 应用上下文 **/
-  context?: common.UIAbilityContext;
+  context?: common.Context;
   /** 当前播放列表的唯一ID **/
   uuid?: string;
   /** 当前播放模式 **/
@@ -134,8 +134,8 @@ class Player {
     return SongLevels.filter(l => l.level <= (maxLevel?.level || 0))
   }
 
-  constructor(_context: common.UIAbilityContext) {
-    this.context = _context
+  constructor() {
+    this.context = getContext()
   }
 
   /**

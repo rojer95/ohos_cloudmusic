@@ -3,17 +3,8 @@ import { common } from '@kit.AbilityKit';
 import { AppStorageV2 } from '@kit.ArkUI';
 
 
-export function getPlayer(): Player | undefined {
-  return AppStorageV2.connect(Player)
-}
-
-export function initPlayer(context: common.UIAbilityContext) {
-  AppStorageV2.connect(Player, () => new Player(context))
-}
-
-
-export async function destroyPlayer() {
-  AppStorageV2.remove(Player)
+export function getPlayer(): Player {
+  return GlobalPlayer.getPlayer()
 }
 
 
@@ -27,4 +18,14 @@ export function getGlobal(): GlobalContent | undefined {
   return AppStorageV2.connect(GlobalContent, () => new GlobalContent())
 }
 
+export class GlobalPlayer {
+  static player: Player;
+
+  static getPlayer() {
+    if (!GlobalPlayer.player) {
+      GlobalPlayer.player = new Player()
+    }
+    return GlobalPlayer.player
+  }
+}
 

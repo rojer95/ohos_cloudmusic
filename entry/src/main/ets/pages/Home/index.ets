@@ -2,7 +2,7 @@ import { LengthMetrics } from '@kit.ArkUI';
 import { BreakpointSystem, BreakpointState } from '../../common/breakpointsystem';
 import { MusicBar } from '../../components/music_bar';
 import { MusicPage } from '../../components/music_page';
-import { getGlobal, getPlayer, GlobalContent } from '../../viewmodel/global';
+import { getGlobal, GlobalContent, getPlayer } from '../../viewmodel/global';
 import { Player } from '../../viewmodel/player';
 import { HomeTabContext } from './views/home';
 import { MeTabContent } from './views/me';
@@ -33,6 +33,7 @@ struct HomePage {
   @Local currentTabIndex: number = 0;
   @Local global: GlobalContent | undefined = getGlobal()
   @Local player: Player | undefined = getPlayer()
+
   tabs: Tab[] = [
     {
       icon: $r("app.media.tabs_icon_home"),
@@ -47,7 +48,6 @@ struct HomePage {
       index: 1
     },
   ]
-
 
   aboutToAppear() {
   }
@@ -79,11 +79,13 @@ struct HomePage {
           }) {
             Image(tab.icon)
               .size({ width: 20, height: 20 })
-              .fillColor(this.currentTabIndex === tab.index ? $r('app.color.primary') : $r('app.color.tab_text_color_un_active'))
+              .fillColor(this.currentTabIndex === tab.index ? $r('app.color.primary') :
+              $r('app.color.tab_text_color_un_active'))
               .draggable(false)
 
             Text(tab.label)
-              .fontColor(this.currentTabIndex === tab.index ? $r('app.color.primary') :  $r('app.color.tab_text_color_un_active'))
+              .fontColor(this.currentTabIndex === tab.index ? $r('app.color.primary') :
+              $r('app.color.tab_text_color_un_active'))
               .fontSize(10)
           }
           .flexGrow(1)

@@ -12,7 +12,6 @@ import { getGlobal, getPlayer, GlobalContent } from "../../../../viewmodel/globa
 import { CacheUtil } from '../../../../viewmodel/cache';
 import { CommonSongList } from "../../../../components/common_song_list";
 import { getInvateUrl } from "../../../../api/invate";
-import { pasteboard } from "@kit.BasicServicesKit";
 import { INTERVAL } from "../../../../common/vars";
 
 
@@ -356,41 +355,17 @@ export struct MeTabContent {
           this.tabKey = tab.key
         })
       })
-      /**
-       if (this.invateUrl) {
-       Column() {
-       Text('邀请好友')
-       .fontSize(10)
-       .padding({
-       top: 2,
-       bottom: 2,
-       left: 4,
-       right: 4
-       })
-       .align(Alignment.Center)
-       .textAlign(TextAlign.Center)
-       .border({ width: 1, color: $r('app.color.primary') })
-       .fontColor($r('app.color.primary'))
-       .borderRadius(14)
-       .margin({ left: 12 })
-       .onClick(async () => {
-       const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, this.invateUrl);
-       let systemPasteboard = pasteboard.getSystemPasteboard();
-       await systemPasteboard.setData(pasteData);
-       promptAction.showDialog({
-       title: '复制成功',
-       message: '内测链接已复制到您的剪切板，您可以将链接分享给Next用户好友。内测邀请名额数量有限先到先得。',
-       buttons: [{
-       text: '我知道了',
-       color: $r('app.color.normal_text_color')
-       },]
-       })
-       })
-       }
-       .alignItems(HorizontalAlign.End)
-       .flexGrow(1)
-       }
-       **/
+
+      //
+      // Column() {
+      //   Image($r('app.media.icon_setting')).width(14).height(14).draggable(false)
+      // }.onClick(() => {
+      //   const param: Record<string, string> = {}
+      //   this.pathStack.pushPathByName('Setting', param)
+      //
+      // })
+      // .alignItems(HorizontalAlign.End)
+      // .flexGrow(1)
     }
     .width('100%')
     .padding(16)
